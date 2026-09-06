@@ -2,6 +2,10 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { RecipeCard } from "./RecipeCard";
 
+// Male, osobne aplikacije - jednostavnije i sigurnije uvijek čitati uživo
+// nego pratiti lanac revalidatePath poziva kroz sve ovisne rute.
+export const dynamic = "force-dynamic";
+
 export default async function ReceptiPage() {
   const { data: recipes, error } = await supabase
     .from("recipes")

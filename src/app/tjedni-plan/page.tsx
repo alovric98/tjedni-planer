@@ -2,6 +2,10 @@ import { supabase } from "@/lib/supabase";
 import { DaySelect } from "./DaySelect";
 import { ShoppingListGenerator } from "./ShoppingListGenerator";
 
+// Recepti se mogu mijenjati na tabu "Recepti" (druga ruta), pa statički
+// snapshot ovdje ne bi vidio te promjene bez ovoga.
+export const dynamic = "force-dynamic";
+
 const DAY_LABELS = [
   "Ponedjeljak",
   "Utorak",

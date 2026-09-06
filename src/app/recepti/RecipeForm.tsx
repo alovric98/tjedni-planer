@@ -8,7 +8,7 @@ const UNITS = ["g", "kg", "ml", "l", "kom"] as const;
 type IngredientRow = { key: string; name: string; quantity: string; unit: string };
 
 function makeEmptyRow(): IngredientRow {
-  return { key: crypto.randomUUID(), name: "", quantity: "", unit: "kom" };
+  return { key: crypto.randomUUID(), name: "", quantity: "", unit: "g" };
 }
 
 type RecipeFormProps = {

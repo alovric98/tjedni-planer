@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatQuantity } from "@/lib/format";
 import { DeleteRecipeButton } from "./DeleteRecipeButton";
 
 type RecipeCardProps = {
@@ -28,8 +29,4 @@ export function RecipeCard({ id, name, ingredients }: RecipeCardProps) {
       </ul>
     </div>
   );
-}
-
-function formatQuantity(q: number) {
-  return Number.isInteger(q) ? String(q) : q.toString().replace(".", ",");
 }

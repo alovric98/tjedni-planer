@@ -9,6 +9,7 @@ export type ProductForMatching = {
   price: number;
   unit: string | null;
   unit_price: number | null;
+  net_quantity: number | null;
 };
 
 export async function getAllProducts(store: "lidl" | "kaufland"): Promise<ProductForMatching[]> {
@@ -18,7 +19,7 @@ export async function getAllProducts(store: "lidl" | "kaufland"): Promise<Produc
   for (;;) {
     const { data, error } = await supabase
       .from("products")
-      .select("id, name, brand, price, unit, unit_price")
+      .select("id, name, brand, price, unit, unit_price, net_quantity")
       .eq("store", store)
       .range(from, from + PAGE_SIZE - 1);
 

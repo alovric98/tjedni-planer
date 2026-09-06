@@ -26,6 +26,7 @@ async function buildBasket(
         unit: item.unit,
         matchedName: null,
         calculatedPrice: null,
+        packages: 1,
         exact: true,
       };
     }
@@ -39,6 +40,7 @@ async function buildBasket(
       unit: item.unit,
       matchedName: brand ? `${product.name} (${brand})` : product.name,
       calculatedPrice: estimate.price,
+      packages: estimate.packages,
       exact: estimate.exact,
     };
   });

@@ -117,8 +117,11 @@ function round2(n: number): number {
 
 export type PriceEstimate = {
   price: number;
-  /** false kad smo morali pasti natrag na cijenu cijelog pakiranja jer
-   * nemamo pouzdanu jediničnu cijenu/bazu za traženu jedinicu mjere. */
+  /** Koliko cijelih pakiranja treba kupiti da se pokrije potrebna količina -
+   * ne može se kupiti pola pakiranja tjestenine ili ulja u dućanu. */
+  packages: number;
+  /** false kad smo morali nagađati (nema pouzdane veličine pakiranja/baze
+   * jedinice) pa je prikazana samo cijena jednog pakiranja. */
   exact: boolean;
 };
 
@@ -126,12 +129,17 @@ export function calculateItemPrice(
   ingredient: { quantity: number; unit: string },
   product: ProductForMatching
 ): PriceEstimate {
-  if (product.unit && product.unit_price !== null) {
-    const basis = product.unit as "kg" | "l" | "kom";
-    const converted = convertToBasis(ingredient.quantity, ingredient.unit, basis);
-    if (converted !== null) {
-      return { price: round2(product.unit_price * converted), exact: true };
+  // Proizvod je zapakiran u fiksnu veličinu (net_quantity, u istoj bazi kao
+  // unit: kg ili l) - kupuje se u cijelim pakiranjima, ne po proporciji
+  // (za 250g tjestenine u pakiranju od 500g treba kupiti 1 cijelo pakiranje,
+  // ne pola cijene).
+  if ((product.unit === "kg" || product.unit === "l") && product.net_quantity) {
+    const neededInBasis = convertToBasis(ingredient.quantity, ingredient.unit, product.unit);
+    if (neededInBasis !== null) {
+      const packages = Math.max(1, Math.ceil(neededInBasis / product.net_quantity));
+      return { price: round2(packages * product.price), packages, exact: true };
     }
   }
-  return { price: round2(product.price), exact: false };
+
+  return { price: round2(product.price), packages: 1, exact: false };
 }

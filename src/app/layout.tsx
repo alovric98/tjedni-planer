@@ -14,7 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tjedni planer ručkova",
+  title: {
+    default: "Tjedni planer ručkova",
+    template: "%s · Tjedni planer",
+  },
   description: "Planiranje ručkova i usporedba cijena Lidl vs Kaufland",
 };
 

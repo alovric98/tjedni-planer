@@ -9,6 +9,7 @@ export type BasketRow = {
   unit: string;
   matchedName: string | null;
   calculatedPrice: number | null;
+  packages: number;
   exact: boolean;
 };
 
@@ -42,7 +43,16 @@ function BasketTable({ basket }: { basket: StoreBasket }) {
               <tr key={i} className="border-b border-gray-100 last:border-0">
                 <td className="p-2">{row.ingredient}</td>
                 <td className="p-2">
-                  {row.matchedName ?? <span className="text-red-500">nije pronađeno</span>}
+                  {row.matchedName ? (
+                    <>
+                      {row.matchedName}
+                      {row.packages > 1 && (
+                        <span className="ml-1 text-xs text-gray-400">× {row.packages}</span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-red-500">nije pronađeno</span>
+                  )}
                 </td>
                 <td className="p-2 text-right whitespace-nowrap text-gray-500">
                   {formatQuantity(row.quantity)} {row.unit}
@@ -60,7 +70,8 @@ function BasketTable({ basket }: { basket: StoreBasket }) {
       <p className="mt-3 text-right text-base font-semibold">Ukupno: {basket.total.toFixed(2)} €</p>
       {basket.rows.some((r) => r.calculatedPrice !== null && !r.exact) && (
         <p className="mt-1 text-right text-xs text-gray-400">
-          ~ cijena cijelog pakiranja (nema pouzdane cijene po jedinici mjere za traženu količinu)
+          ~ cijena jednog pakiranja (ne znamo točnu veličinu pakiranja pa ne možemo izračunati
+          treba li ih više)
         </p>
       )}
     </div>

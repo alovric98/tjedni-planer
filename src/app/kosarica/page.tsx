@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import { generateShoppingList, type ShoppingListItem } from "../tjedni-plan/actions";
 import { getAllProducts } from "@/lib/products";
 import { buildProductIndex, matchProduct, calculateItemPrice } from "@/lib/matching";
 import { supabase } from "@/lib/supabase";
 import { StoreTabs, type StoreBasket } from "./StoreTabs";
+
+export const metadata: Metadata = { title: "Košarica" };
 
 // Ovisi o podacima koji se mijenjaju izvan ove stranice (cron dnevno puni
 // products, recepti/tjedni plan se mijenjaju na drugim stranicama) - statički

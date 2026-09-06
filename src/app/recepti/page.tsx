@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { RecipeCard } from "./RecipeCard";
+
+export const metadata: Metadata = { title: "Recepti" };
 
 // Male, osobne aplikacije - jednostavnije i sigurnije uvijek čitati uživo
 // nego pratiti lanac revalidatePath poziva kroz sve ovisne rute.

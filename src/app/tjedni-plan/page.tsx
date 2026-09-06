@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import { DaySelect } from "./DaySelect";
 import { ShoppingListGenerator } from "./ShoppingListGenerator";
+
+export const metadata: Metadata = { title: "Tjedni plan" };
 
 // Recepti se mogu mijenjati na tabu "Recepti" (druga ruta), pa statički
 // snapshot ovdje ne bi vidio te promjene bez ovoga.

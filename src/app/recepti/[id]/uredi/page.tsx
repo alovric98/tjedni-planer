@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { RecipeForm } from "../../RecipeForm";
+
+export const metadata: Metadata = { title: "Uredi recept" };
 
 export default async function UrediReceptPage({
   params,

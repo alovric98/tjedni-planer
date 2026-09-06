@@ -11,6 +11,8 @@ Trenutni status: **Faza 1 (setup)** - prazan skeleton s tri taba, bez stvarne
 funkcionalnosti. Recepti, tjedni plan, dohvat cijena i košarica dolaze u
 sljedećim fazama.
 
+Live: https://tjedni-planer.vercel.app
+
 ## Pokretanje lokalno
 
 ```bash

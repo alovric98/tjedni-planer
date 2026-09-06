@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    { "path": "/api/cron/lidl", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/kaufland", "schedule": "0 9 * * *" }
+  ],
+  "functions": {
+    "src/app/api/cron/lidl/route.ts": { "maxDuration": 60 },
+    "src/app/api/cron/kaufland/route.ts": { "maxDuration": 60 }
+  }
+}

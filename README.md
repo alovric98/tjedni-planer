@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tjedni planer ručkova
 
-## Getting Started
+Osobna web aplikacija za planiranje ručkova za tjedan dana, s automatskim
+generiranjem popisa za kupovinu i usporedbom procijenjenog troška u Lidlu i
+Kauflandu na temelju njihovih službeno objavljenih dnevnih cjenika.
 
-First, run the development server:
+Stack: Next.js (App Router) na Vercelu, Supabase (Postgres) za bazu, Vercel
+Cron za dnevni dohvat cijena. Sve u besplatnim planovima.
+
+Trenutni status: **Faza 1 (setup)** - prazan skeleton s tri taba, bez stvarne
+funkcionalnosti. Recepti, tjedni plan, dohvat cijena i košarica dolaze u
+sljedećim fazama.
+
+## Pokretanje lokalno
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Otvori [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Povezivanje sa Supabaseom
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Napravi besplatan projekt na [supabase.com](https://supabase.com/dashboard).
+2. U Supabase dashboardu: **Project Settings → API** - odatle uzmi `Project URL`
+   i `anon public` ključ.
+3. Kopiraj `.env.example` u `.env.local` i popuni:
+   ```bash
+   cp .env.example .env.local
+   ```
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=...
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+   ```
+4. Pokreni SQL migraciju iz `supabase/migrations/0001_init.sql` u Supabase
+   dashboardu (**SQL Editor** → zalijepi sadržaj fajla → Run), ili preko
+   Supabase CLI-ja (`supabase db push`) ako imaš povezan projekt.
+5. `SUPABASE_SERVICE_ROLE_KEY` (isto u **Project Settings → API**) treba tek od
+   Faze 4 (cron dohvat cijena, piše u bazu mimo RLS-a) - može ostati prazan
+   dotad.
 
-## Learn More
+Napomena o besplatnom planu: Supabase projekt na besplatnom planu se pauzira
+nakon dužeg perioda potpune neaktivnosti. Dnevni cron (Faza 4) bi to trebao
+sprječavati, ali ako se nakon duže pauze u korištenju nešto čudno dogodi s
+podacima, prvo provjeri je li projekt pauziran.
 
-To learn more about Next.js, take a look at the following resources:
+## Deploy na Vercel
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Poveži repozitorij s Vercelom (Import Project na [vercel.com](https://vercel.com/new))
+   ili koristi `npx vercel` iz ovog foldera.
+2. U Vercel projektu pod **Settings → Environment Variables** dodaj iste
+   varijable kao u `.env.local` (`NEXT_PUBLIC_SUPABASE_URL`,
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
+3. `vercel.json` već sadrži cron konfiguraciju (jednom dnevno, u skladu s
+   limitom Vercel Hobby plana od najviše 1x dnevno po jobu) - te rute
+   (`/api/cron/lidl`, `/api/cron/kaufland`) dolaze u Fazi 4. Dok ne postoje,
+   deploy će proći, a cron pozivi će samo vraćati 404 do tada.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Struktura projekta
 
-## Deploy on Vercel
+- `src/app/recepti` - tab 1: CRUD recepata
+- `src/app/tjedni-plan` - tab 2: odabir recepata po danu + generiranje popisa
+- `src/app/kosarica` - tab 3: usporedba cijena Lidl vs Kaufland
+- `src/lib/supabase.ts` - Supabase klijent (browser/anon ključ)
+- `supabase/migrations/` - SQL migracije
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Van dosega za MVP (moguće buduće nadogradnje)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Dodatne trgovine (Spar, Konzum, Studenac, Plodine...)
+- Povijest cijena / grafovi trendova kroz vrijeme
+- Slike recepata, upute za pripremu, broj porcija

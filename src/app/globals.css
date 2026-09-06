@@ -16,3 +16,33 @@
   --color-accent-red: #fbe4e1;
   --color-accent-red-ink: #b3463a;
 }
+
+@keyframes basket-fill {
+  0% {
+    width: 6%;
+  }
+  50% {
+    width: 92%;
+  }
+  100% {
+    width: 6%;
+  }
+}
+
+@keyframes basket-bounce {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-4deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(4deg);
+  }
+}
+
+.animate-basket-fill {
+  animation: basket-fill 1.6s ease-in-out infinite;
+}
+
+.animate-basket-bounce {
+  animation: basket-bounce 0.9s ease-in-out infinite;
+}

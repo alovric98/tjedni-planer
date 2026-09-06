@@ -24,52 +24,55 @@ function formatDate(iso: string | null): string {
   return new Date(iso).toLocaleString("hr-HR", { dateStyle: "medium", timeStyle: "short" });
 }
 
-function BasketTable({ basket }: { basket: StoreBasket }) {
+function BasketRowCard({ row }: { row: BasketRow }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-2xl bg-white p-4 shadow-sm shadow-black/5">
+      <div className="min-w-0">
+        <p className="font-semibold text-ink">{row.ingredient}</p>
+        <p className="mt-0.5 truncate text-sm text-ink-muted">
+          {row.matchedName ? (
+            <>
+              {row.matchedName}
+              {row.packages > 1 && <span className="ml-1 text-xs">× {row.packages}</span>}
+            </>
+          ) : (
+            <span className="text-accent-red-ink">nije pronađeno</span>
+          )}
+        </p>
+      </div>
+      <div className="shrink-0 text-right">
+        <p className="text-xs text-ink-muted">
+          {formatQuantity(row.quantity)} {row.unit}
+        </p>
+        <p className="font-semibold text-ink">
+          {row.calculatedPrice !== null
+            ? `${row.exact ? "" : "~"}${row.calculatedPrice.toFixed(2)} €`
+            : "—"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function BasketView({ basket }: { basket: StoreBasket }) {
   return (
     <div>
-      <p className="text-xs text-gray-400">Zadnje osvježeno: {formatDate(basket.lastUpdated)}</p>
-      <div className="mt-2 overflow-x-auto rounded-lg border border-gray-200 bg-white">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 text-left text-xs text-gray-500">
-              <th className="p-2">Sastojak</th>
-              <th className="p-2">Proizvod</th>
-              <th className="p-2 text-right">Potrebno</th>
-              <th className="p-2 text-right">Cijena</th>
-            </tr>
-          </thead>
-          <tbody>
-            {basket.rows.map((row, i) => (
-              <tr key={i} className="border-b border-gray-100 last:border-0">
-                <td className="p-2">{row.ingredient}</td>
-                <td className="p-2">
-                  {row.matchedName ? (
-                    <>
-                      {row.matchedName}
-                      {row.packages > 1 && (
-                        <span className="ml-1 text-xs text-gray-400">× {row.packages}</span>
-                      )}
-                    </>
-                  ) : (
-                    <span className="text-red-500">nije pronađeno</span>
-                  )}
-                </td>
-                <td className="p-2 text-right whitespace-nowrap text-gray-500">
-                  {formatQuantity(row.quantity)} {row.unit}
-                </td>
-                <td className="p-2 text-right whitespace-nowrap font-medium">
-                  {row.calculatedPrice !== null
-                    ? `${row.exact ? "" : "~"}${row.calculatedPrice.toFixed(2)} €`
-                    : "—"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="rounded-3xl bg-accent-green p-5">
+        <p className="text-sm font-semibold text-accent-green-ink">Ukupno za tjedan</p>
+        <p className="mt-1 text-3xl font-bold text-ink">{basket.total.toFixed(2)} €</p>
+        <p className="mt-2 text-xs text-accent-green-ink/80">
+          Zadnje osvježeno: {formatDate(basket.lastUpdated)}
+        </p>
       </div>
-      <p className="mt-3 text-right text-base font-semibold">Ukupno: {basket.total.toFixed(2)} €</p>
+
+      <div className="mt-4 space-y-2">
+        {basket.rows.map((row, i) => (
+          <BasketRowCard key={i} row={row} />
+        ))}
+      </div>
+
       {basket.rows.some((r) => r.calculatedPrice !== null && !r.exact) && (
-        <p className="mt-1 text-right text-xs text-gray-400">
+        <p className="mt-3 text-xs text-ink-muted">
           ~ cijena jednog pakiranja (ne znamo točnu veličinu pakiranja pa ne možemo izračunati
           treba li ih više)
         </p>
@@ -83,12 +86,12 @@ export function StoreTabs({ lidl, kaufland }: { lidl: StoreBasket; kaufland: Sto
 
   return (
     <div className="mt-4">
-      <div className="flex gap-2">
+      <div className="inline-flex gap-1 rounded-full bg-gray-100 p-1">
         <button
           type="button"
           onClick={() => setStore("lidl")}
-          className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-            store === "lidl" ? "bg-emerald-600 text-white" : "bg-gray-100 text-gray-600"
+          className={`rounded-full px-5 py-2 text-sm font-semibold transition-colors ${
+            store === "lidl" ? "bg-brand-dark text-white" : "text-ink-muted"
           }`}
         >
           Lidl
@@ -96,8 +99,8 @@ export function StoreTabs({ lidl, kaufland }: { lidl: StoreBasket; kaufland: Sto
         <button
           type="button"
           onClick={() => setStore("kaufland")}
-          className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-            store === "kaufland" ? "bg-emerald-600 text-white" : "bg-gray-100 text-gray-600"
+          className={`rounded-full px-5 py-2 text-sm font-semibold transition-colors ${
+            store === "kaufland" ? "bg-brand-dark text-white" : "text-ink-muted"
           }`}
         >
           Kaufland
@@ -105,7 +108,7 @@ export function StoreTabs({ lidl, kaufland }: { lidl: StoreBasket; kaufland: Sto
       </div>
 
       <div className="mt-4">
-        <BasketTable basket={store === "lidl" ? lidl : kaufland} />
+        <BasketView basket={store === "lidl" ? lidl : kaufland} />
       </div>
     </div>
   );

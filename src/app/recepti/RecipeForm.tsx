@@ -5,6 +5,14 @@ import { createRecipe, updateRecipe, type RecipeFormState } from "./actions";
 
 const UNITS = ["g", "kg", "ml", "l", "kom"] as const;
 
+// Namjerno bez width/padding ovdje - te vrijednosti se razlikuju po polju
+// (naziv, količina, jedinica), a Tailwind ne garantira da će kasnija klasa u
+// stringu (npr. "w-20") pobijediti raniju ("w-full") po CSS specifičnosti,
+// pa ih dodajemo eksplicitno na svakom pozivu umjesto da se oslanjamo na
+// redoslijed u className stringu.
+const fieldClass =
+  "rounded-2xl border-0 bg-gray-100 py-3 text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand";
+
 type IngredientRow = { key: string; name: string; quantity: string; unit: string };
 
 function makeEmptyRow(): IngredientRow {
@@ -53,7 +61,7 @@ export function RecipeForm({ mode, recipe }: RecipeFormProps) {
   return (
     <form action={formAction} className="space-y-6">
       <div>
-        <label className="block text-sm font-medium text-gray-700" htmlFor="name">
+        <label className="block text-sm font-semibold text-ink" htmlFor="name">
           Naziv recepta
         </label>
         <input
@@ -63,67 +71,69 @@ export function RecipeForm({ mode, recipe }: RecipeFormProps) {
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          className={`mt-2 w-full px-4 ${fieldClass}`}
         />
       </div>
 
       <div>
-        <span className="block text-sm font-medium text-gray-700">Sastojci</span>
-        <div className="mt-2 space-y-2">
+        <span className="block text-sm font-semibold text-ink">Sastojci</span>
+        <div className="mt-2 space-y-3">
           {rows.map((row) => (
-            <div key={row.key} className="flex gap-2">
+            <div key={row.key} className="rounded-2xl bg-gray-50 p-2.5 sm:flex sm:items-center sm:gap-2 sm:bg-transparent sm:p-0">
               <input
                 name="ingredient_name"
                 type="text"
                 placeholder="Naziv sastojka"
                 value={row.name}
                 onChange={(e) => updateRow(row.key, { name: e.target.value })}
-                className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
+                className={`w-full min-w-0 px-4 sm:flex-1 ${fieldClass}`}
               />
-              <input
-                name="ingredient_quantity"
-                type="number"
-                step="any"
-                min="0"
-                placeholder="Kol."
-                value={row.quantity}
-                onChange={(e) => updateRow(row.key, { quantity: e.target.value })}
-                className="w-20 rounded-md border border-gray-300 px-3 py-2 text-sm"
-              />
-              <select
-                name="ingredient_unit"
-                value={row.unit}
-                onChange={(e) => updateRow(row.key, { unit: e.target.value })}
-                className="rounded-md border border-gray-300 px-2 py-2 text-sm"
-              >
-                {UNITS.map((u) => (
-                  <option key={u} value={u}>
-                    {u}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={() => removeRow(row.key)}
-                className="px-2 text-gray-400 hover:text-red-600"
-                aria-label="Makni sastojak"
-              >
-                ✕
-              </button>
+              <div className="mt-2 flex gap-2 sm:mt-0 sm:contents">
+                <input
+                  name="ingredient_quantity"
+                  type="number"
+                  step="any"
+                  min="0"
+                  placeholder="Kol."
+                  value={row.quantity}
+                  onChange={(e) => updateRow(row.key, { quantity: e.target.value })}
+                  className={`w-20 shrink-0 px-3 ${fieldClass}`}
+                />
+                <select
+                  name="ingredient_unit"
+                  value={row.unit}
+                  onChange={(e) => updateRow(row.key, { unit: e.target.value })}
+                  className={`w-24 shrink-0 px-2 ${fieldClass}`}
+                >
+                  {UNITS.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => removeRow(row.key)}
+                  className="shrink-0 px-1 text-ink-muted hover:text-accent-red-ink"
+                  aria-label="Makni sastojak"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
           ))}
         </div>
-        <button type="button" onClick={addRow} className="mt-2 text-sm font-medium text-emerald-700">
+        <button type="button" onClick={addRow} className="mt-3 text-sm font-semibold text-brand">
           + Dodaj sastojak
         </button>
       </div>
 
-      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {state.error && <p className="text-sm text-accent-red-ink">{state.error}</p>}
 
       <button
         type="submit"
         disabled={pending}
-        className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+        className="rounded-full bg-brand-dark px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
       >
         {mode === "create" ? "Spremi recept" : "Spremi izmjene"}
       </button>

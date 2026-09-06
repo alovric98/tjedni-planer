@@ -24,7 +24,7 @@ export default async function UrediReceptPage({
 
   return (
     <div>
-      <h1 className="text-xl font-semibold">Uredi recept</h1>
+      <h1 className="text-2xl font-bold text-ink">Uredi recept</h1>
       <div className="mt-4">
         <RecipeForm
           mode="edit"

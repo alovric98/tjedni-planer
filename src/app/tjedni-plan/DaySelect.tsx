@@ -12,10 +12,21 @@ type DaySelectProps = {
 
 export function DaySelect({ dayOfWeek, label, selectedRecipeId, recipes }: DaySelectProps) {
   const [isPending, startTransition] = useTransition();
+  const hasRecipe = selectedRecipeId !== null;
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3">
-      <span className="w-24 shrink-0 text-sm font-medium text-gray-700">{label}</span>
+    <div
+      className={`flex items-center gap-3 rounded-2xl p-3 transition-colors ${
+        hasRecipe ? "bg-accent-green" : "bg-white"
+      }`}
+    >
+      <span
+        className={`w-[4.5rem] shrink-0 text-sm font-semibold ${
+          hasRecipe ? "text-accent-green-ink" : "text-ink"
+        }`}
+      >
+        {label}
+      </span>
       <select
         defaultValue={selectedRecipeId ?? ""}
         disabled={isPending}
@@ -25,7 +36,9 @@ export function DaySelect({ dayOfWeek, label, selectedRecipeId, recipes }: DaySe
             setDayRecipe(dayOfWeek, value);
           });
         }}
-        className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm disabled:opacity-50"
+        className={`min-w-0 flex-1 rounded-xl border-0 px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50 ${
+          hasRecipe ? "bg-white/70" : "bg-gray-100"
+        }`}
       >
         <option value="">— odaberi recept —</option>
         {recipes.map((r) => (

@@ -25,24 +25,23 @@ export function ShoppingListGenerator() {
             }
           });
         }}
-        className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+        className="rounded-full bg-brand-dark px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
       >
         {isPending ? "Generiram…" : "Generiraj popis za kupovinu"}
       </button>
 
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm text-accent-red-ink">{error}</p>}
 
       {items && (
         <div className="mt-4">
-          <h2 className="text-sm font-medium text-gray-700">Popis za kupovinu</h2>
+          <h2 className="text-sm font-semibold text-ink">Popis za kupovinu</h2>
           {items.length === 0 ? (
-            <p className="mt-2 text-sm text-gray-500">
-              Nema odabranih recepata za tjedan.
-            </p>
+            <p className="mt-2 text-sm text-ink-muted">Nema odabranih recepata za tjedan.</p>
           ) : (
-            <ul className="mt-2 space-y-1 rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700">
+            <ul className="mt-2 space-y-1.5 rounded-3xl bg-white p-5 text-sm text-ink-muted shadow-sm shadow-black/5">
               {items.map((item, i) => (
-                <li key={i}>
+                <li key={i} className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent-green-ink/40" />
                   {item.name} — {formatQuantity(item.quantity)} {item.unit}
                 </li>
               ))}

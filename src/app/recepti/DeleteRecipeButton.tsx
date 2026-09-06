@@ -17,7 +17,7 @@ export function DeleteRecipeButton({ id }: { id: string }) {
           });
         }
       }}
-      className="text-red-600 disabled:opacity-50"
+      className="text-accent-red-ink disabled:opacity-50"
     >
       Obriši
     </button>

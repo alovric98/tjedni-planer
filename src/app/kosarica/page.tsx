@@ -59,8 +59,8 @@ export default async function KosaricaPage() {
   if (items.length === 0) {
     return (
       <div>
-        <h1 className="text-xl font-semibold">Košarica</h1>
-        <p className="mt-2 text-gray-500">
+        <h1 className="text-2xl font-bold text-ink">Košarica</h1>
+        <p className="mt-2 text-ink-muted">
           Nema sastojaka - odaberi recepte za tjedan na tabu &quot;Tjedni plan&quot;.
         </p>
       </div>
@@ -84,7 +84,7 @@ export default async function KosaricaPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold">Košarica</h1>
+      <h1 className="text-2xl font-bold text-ink">Košarica</h1>
       <StoreTabs lidl={lidlBasket} kaufland={kauflandBasket} />
     </div>
   );

@@ -38,10 +38,10 @@ export function ShoppingListGenerator() {
           {items.length === 0 ? (
             <p className="mt-2 text-sm text-ink-muted">Nema odabranih recepata za tjedan.</p>
           ) : (
-            <ul className="mt-2 space-y-1.5 rounded-3xl bg-white p-5 text-sm text-ink-muted shadow-sm shadow-black/5">
+            <ul className="mt-2 space-y-1.5 rounded-xl border border-border bg-surface-1 p-5 text-sm text-ink-muted">
               {items.map((item, i) => (
                 <li key={i} className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent-green-ink/40" />
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-border" />
                   {item.name} — {formatQuantity(item.quantity)} {item.unit}
                 </li>
               ))}

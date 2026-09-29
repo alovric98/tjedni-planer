@@ -42,7 +42,7 @@ function round2(n: number): number {
 function ErrorState({ message }: { message: string }) {
   return (
     <div>
-      <h1 className="text-2xl font-bold text-ink">Košarica</h1>
+      <h1 className="text-2xl font-semibold text-ink">Košarica</h1>
       <p className="mt-2 text-accent-red-ink">Greška kod dohvata košarice: {message}</p>
     </div>
   );
@@ -59,7 +59,7 @@ export default async function KosaricaPage() {
   if (items.length === 0) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-ink">Košarica</h1>
+        <h1 className="text-2xl font-semibold text-ink">Košarica</h1>
         <p className="mt-2 text-ink-muted">
           Nema sastojaka - odaberi recepte za tjedan na tabu &quot;Tjedni plan&quot;.
         </p>
@@ -97,7 +97,7 @@ export default async function KosaricaPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-ink">Košarica</h1>
+      <h1 className="text-2xl font-semibold text-ink">Košarica</h1>
       <StoreTabs lidl={lidlBasket} kaufland={kauflandBasket} />
     </div>
   );

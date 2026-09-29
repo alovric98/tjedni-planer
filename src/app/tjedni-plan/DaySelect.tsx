@@ -16,8 +16,8 @@ export function DaySelect({ dayOfWeek, label, selectedRecipeId, recipes }: DaySe
 
   return (
     <div
-      className={`flex items-center gap-3 rounded-2xl p-3 transition-colors ${
-        hasRecipe ? "bg-accent-green" : "bg-white"
+      className={`flex items-center gap-3 rounded-xl p-3 transition-colors duration-200 ${
+        hasRecipe ? "bg-accent-green" : "bg-surface-1"
       }`}
     >
       <span
@@ -37,7 +37,7 @@ export function DaySelect({ dayOfWeek, label, selectedRecipeId, recipes }: DaySe
           });
         }}
         className={`min-w-0 flex-1 rounded-xl border-0 px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50 ${
-          hasRecipe ? "bg-white/70" : "bg-gray-100"
+          hasRecipe ? "bg-surface-1/70" : "bg-surface-2"
         }`}
       >
         <option value="">— odaberi recept —</option>

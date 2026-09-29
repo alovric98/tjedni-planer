@@ -11,7 +11,7 @@ const UNITS = ["g", "kg", "ml", "l", "kom"] as const;
 // pa ih dodajemo eksplicitno na svakom pozivu umjesto da se oslanjamo na
 // redoslijed u className stringu.
 const fieldClass =
-  "rounded-2xl border-0 bg-gray-100 py-3 text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand";
+  "rounded-xl border-0 bg-gray-100 py-3 text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand";
 
 type IngredientRow = { key: string; name: string; quantity: string; unit: string };
 
@@ -79,7 +79,7 @@ export function RecipeForm({ mode, recipe }: RecipeFormProps) {
         <span className="block text-sm font-semibold text-ink">Sastojci</span>
         <div className="mt-2 space-y-3">
           {rows.map((row) => (
-            <div key={row.key} className="rounded-2xl bg-gray-50 p-2.5 sm:flex sm:items-center sm:gap-2 sm:bg-transparent sm:p-0">
+            <div key={row.key} className="rounded-xl bg-gray-50 p-2.5 sm:flex sm:items-center sm:gap-2 sm:bg-transparent sm:p-0">
               <input
                 name="ingredient_name"
                 type="text"
@@ -123,7 +123,7 @@ export function RecipeForm({ mode, recipe }: RecipeFormProps) {
             </div>
           ))}
         </div>
-        <button type="button" onClick={addRow} className="mt-3 text-sm font-semibold text-brand">
+        <button type="button" onClick={addRow} className="mt-3 text-sm font-semibold text-ink">
           + Dodaj sastojak
         </button>
       </div>

@@ -10,6 +10,9 @@ export type ProductForMatching = {
   unit: string | null;
   unit_price: number | null;
   net_quantity: number | null;
+  // Koristi se za filtriranje kandidata na hranu/piće prije uparivanja -
+  // vidi FOOD_CATEGORIES u matching.ts.
+  category: string | null;
 };
 
 export async function getAllProducts(store: "lidl" | "kaufland"): Promise<ProductForMatching[]> {
@@ -34,7 +37,7 @@ export async function getAllProducts(store: "lidl" | "kaufland"): Promise<Produc
     Array.from({ length: pageCount }, (_, i) =>
       supabase
         .from("products")
-        .select("id, name, brand, price, unit, unit_price, net_quantity")
+        .select("id, name, brand, price, unit, unit_price, net_quantity, category")
         .eq("store", store)
         .range(i * PAGE_SIZE, i * PAGE_SIZE + PAGE_SIZE - 1)
     )

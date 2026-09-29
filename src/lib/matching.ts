@@ -50,9 +50,54 @@ function wordScore(word: string, target: string): number {
   return target.includes(word.slice(0, prefixLength)) ? 1 : 0;
 }
 
-export function matchProduct(index: ProductIndex, ingredientName: string): ProductForMatching | null {
+// Kaufland/Lidl cjenik dijeli cijeli katalog na svega 6 širokih kategorija
+// (HRANA, PIĆE, KOZMETIKA, PROIZVODI ZA KUĆANSTVO, SREDSTVA ZA ČIŠĆENJE,
+// TOALETNE POTREPŠTINE - provjereno na stvarnom Kaufland cjeniku,
+// 29.09.2026). Sastojci recepata su isključivo hrana i piće; bez ovog filtra
+// "mlijeko" uparuje Nivea losion za tijelo (kategorija KOZMETIKA) jer riječ
+// "mlijeko" doslovno stoji u nazivu kozmetičkog proizvoda (audit N1). Kad
+// kategorija nedostaje (npr. nepotvrđeno Lidlovo polje, audit N19) ne
+// filtriramo - bolje propustiti kandidata na provjeru praga nego ga tiho
+// izgubiti zbog praznog polja.
+const FOOD_CATEGORIES = new Set(["HRANA", "PIĆE"]);
+
+/**
+ * wordScore je odozgo neograničen brojem riječi upita (max 2 po riječi), pa
+ * ga normaliziramo na 0-1 da prag ispod ima stvarno značenje "koliki dio
+ * upita se poklapa", a ne apsolutni zbroj koji ovisi o duljini sastojka.
+ */
+function normalizedScore(queryWords: string[], target: string): number {
+  const max = queryWords.length * 2;
+  if (max === 0) return 0;
+  const sum = queryWords.reduce((total, w) => total + wordScore(w, target), 0);
+  return sum / max;
+}
+
+// Kalibrirano na stvarnom Kaufland cjeniku (15.358 proizvoda, 29.09.2026):
+// 0.6 propušta prave sinonime i varijante marke (sve vrste trajnog/svježeg
+// mlijeka za upit "mlijeko", sve vrste maslinovog ulja za "maslinovo ulje")
+// dok odbacuje slabe pogotke gdje se poklopi samo jedan pridjev ili kratki
+// prefiks. Prag NE rješava sam po sebi slučaj kad kratka jednorječna
+// namirnica (npr. "jaja") doslovno stoji u nazivu potpuno drugog proizvoda
+// (npr. tjestenina "bez jaja") - za to je presudan kategorijski filtar iznad
+// i, gdje treba, ručna korekcija naziva sastojka u receptu. Ispod praga =
+// kandidat se uopće ne broji, ni u prosjek ni u prikaz "N proizvoda".
+export const MIN_MATCH_SIMILARITY = 0.6;
+
+export type MatchCandidate = {
+  product: ProductForMatching;
+  score: number; // 0-1, normalizirani wordScore
+};
+
+/**
+ * Vraća SVE kandidate iznad praga pouzdanosti (ne bira pobjednika) - FIX 1,
+ * korak 0. `matchProduct` ispod je tanki wrapper zadržan zbog kompatibilnosti
+ * postojećih poziva; stvarna logika cijene (prosjek/trimmed mean, korak 1-3)
+ * živi u `src/lib/pricing.ts` i konzumira ovu listu.
+ */
+export function matchProductCandidates(index: ProductIndex, ingredientName: string): MatchCandidate[] {
   const queryWords = queryWordsOf(ingredientName);
-  if (queryWords.length === 0) return null;
+  if (queryWords.length === 0) return [];
 
   // Hrvatski naziv sastojka je gotovo uvijek pridjev(i) + glavna imenica na
   // kraju ("mljevena junetina", "integralna tjestenina", "crveni grah").
@@ -62,84 +107,32 @@ export function matchProduct(index: ProductIndex, ingredientName: string): Produ
   // imati stvarnu vezu, pridjevi samo pomažu u rangiranju among kandidata.
   const headWord = queryWords[queryWords.length - 1];
 
-  const candidates: { entry: IndexedProduct; score: number }[] = [];
+  const candidates: MatchCandidate[] = [];
   for (const entry of index) {
     if (wordScore(headWord, entry.normalizedName) === 0) continue;
-    const score = queryWords.reduce((sum, w) => sum + wordScore(w, entry.normalizedName), 0);
-    if (score > 0) candidates.push({ entry, score });
+    const category = entry.product.category;
+    if (category && !FOOD_CATEGORIES.has(category)) continue;
+    const score = normalizedScore(queryWords, entry.normalizedName);
+    if (score >= MIN_MATCH_SIMILARITY) candidates.push({ product: entry.product, score });
   }
-  if (candidates.length === 0) return null;
 
-  // Rangiranje: prvo tko ima jaču/više riječi poklopljenih (rješava i
-  // "riža" zakopanu u dugom nazivu čokoladice - ta bi imala isti score kao
-  // doslovna "Riža XXL" ali dulji naziv gubi na sljedećem kriteriju), pa
-  // kraći/doslovniji naziv, pa cijena kao zadnji kriterij (kako spec traži
-  // kod pravih sličnih kandidata).
+  // Rangiranje samo za prikaz/reprezentativni naziv (kad je 1 kandidat) -
+  // ne bira "pobjednika" za cijenu, to radi prosjek u pricing.ts. Najkraći
+  // naziv je uklonjen kao kriterij (ranije birao "pobjednika" bez razloga,
+  // audit N1) - ostaje samo score, pa cijena kao razrješenje ravnopravnih.
   candidates.sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
-    const lengthDiff = a.entry.normalizedName.length - b.entry.normalizedName.length;
-    if (lengthDiff !== 0) return lengthDiff;
-    return a.entry.product.price - b.entry.product.price;
+    return a.product.price - b.product.price;
   });
 
-  return candidates[0].entry.product;
+  return candidates;
 }
 
-function convertToBasis(
-  quantity: number,
-  unit: string,
-  basis: "kg" | "l" | "kom"
-): number | null {
-  // Mnoge namirnice unesene u gramima su zapravo tekuće/pasirane (npr.
-  // pasirana rajčica, mlijeko) i prodaju se po litri, i obrnuto - zato
-  // dopuštamo g<->ml pretvorbu uz pretpostavku gustoće ~1 (uobičajena
-  // kuharska aproksimacija), umjesto da tu odustanemo i padnemo na
-  // cijenu cijelog pakiranja.
-  if (basis === "kg") {
-    if (unit === "g" || unit === "ml") return quantity / 1000;
-    if (unit === "kg" || unit === "l") return quantity;
-    return null;
-  }
-  if (basis === "l") {
-    if (unit === "ml" || unit === "g") return quantity / 1000;
-    if (unit === "l" || unit === "kg") return quantity;
-    return null;
-  }
-  if (basis === "kom") {
-    return unit === "kom" ? quantity : null;
-  }
-  return null;
-}
-
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
-}
-
-export type PriceEstimate = {
-  price: number;
-  /** Koliko cijelih pakiranja treba kupiti da se pokrije potrebna količina -
-   * ne može se kupiti pola pakiranja tjestenine ili ulja u dućanu. */
-  packages: number;
-  /** false kad smo morali nagađati (nema pouzdane veličine pakiranja/baze
-   * jedinice) pa je prikazana samo cijena jednog pakiranja. */
-  exact: boolean;
-};
-
-export function calculateItemPrice(
-  ingredient: { quantity: number; unit: string },
-  product: ProductForMatching
-): PriceEstimate {
-  // Proizvod je zapakiran u fiksnu veličinu (net_quantity, u istoj bazi kao
-  // unit: kg ili l) - kupuje se u cijelim pakiranjima, ne po proporciji
-  // (za 250g tjestenine u pakiranju od 500g treba kupiti 1 cijelo pakiranje,
-  // ne pola cijene).
-  if ((product.unit === "kg" || product.unit === "l") && product.net_quantity) {
-    const neededInBasis = convertToBasis(ingredient.quantity, ingredient.unit, product.unit);
-    if (neededInBasis !== null) {
-      const packages = Math.max(1, Math.ceil(neededInBasis / product.net_quantity));
-      return { price: round2(packages * product.price), packages, exact: true };
-    }
-  }
-
-  return { price: round2(product.price), packages: 1, exact: false };
+/**
+ * Zadržan stari potpis (jedan proizvod ili null) radi kompatibilnosti s
+ * eventualnim jednostavnim pozivima izvan košarice - u samoj košarici se
+ * više ne koristi, ondje ide `matchProductCandidates` kroz `pricing.ts`.
+ */
+export function matchProduct(index: ProductIndex, ingredientName: string): ProductForMatching | null {
+  return matchProductCandidates(index, ingredientName)[0]?.product ?? null;
 }

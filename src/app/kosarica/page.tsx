@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { generateShoppingList, type ShoppingListItem } from "../tjedni-plan/actions";
 import { getAllProducts } from "@/lib/products";
-import { buildProductIndex, matchProduct, calculateItemPrice } from "@/lib/matching";
+import { buildProductIndex } from "@/lib/matching";
+import { priceShoppingItem, type BasketLineResult } from "@/lib/pricing";
 import { supabase } from "@/lib/supabase";
 import { StoreTabs, type StoreBasket } from "./StoreTabs";
 
@@ -12,45 +13,30 @@ export const metadata: Metadata = { title: "Košarica" };
 // snapshot s builda bi ostao zauvijek zastario bez ovoga.
 export const dynamic = "force-dynamic";
 
-async function buildBasket(
-  store: "lidl" | "kaufland",
-  items: ShoppingListItem[]
-): Promise<StoreBasket> {
+// Cjenik se dohvaća jednom dnevno (cron u 9:00). Stariji od 24h znači da je
+// dnevni dohvat propao - dodatni bug iz audita: Lidlov dohvat je bio mrtav 7
+// dana, a UI je stare cijene prikazivao kao svježe, bez ikakve naznake.
+const STALE_AFTER_MS = 24 * 60 * 60 * 1000;
+
+function isStale(lastSuccess: string | null): boolean {
+  if (!lastSuccess) return true;
+  return Date.now() - new Date(lastSuccess).getTime() > STALE_AFTER_MS;
+}
+
+async function buildBasket(store: "lidl" | "kaufland", items: ShoppingListItem[]): Promise<Omit<StoreBasket, "lastUpdated" | "isStale">> {
   const products = await getAllProducts(store);
   const index = buildProductIndex(products);
 
-  const rows = items.map((item) => {
-    const product = matchProduct(index, item.name);
+  const rows: BasketLineResult[] = items.map((item) => priceShoppingItem(index, item));
 
-    if (!product) {
-      return {
-        ingredient: item.name,
-        quantity: item.quantity,
-        unit: item.unit,
-        matchedName: null,
-        calculatedPrice: null,
-        packages: 1,
-        exact: true,
-      };
-    }
+  const pricedRows = rows.filter((r) => r.totalPrice !== null);
+  const total = round2(pricedRows.reduce((sum, r) => sum + (r.totalPrice ?? 0), 0));
 
-    const estimate = calculateItemPrice(item, product);
-    const brand = product.brand && product.brand !== "#" ? product.brand : null;
+  return { rows, total, unpricedCount: rows.length - pricedRows.length };
+}
 
-    return {
-      ingredient: item.name,
-      quantity: item.quantity,
-      unit: item.unit,
-      matchedName: brand ? `${product.name} (${brand})` : product.name,
-      calculatedPrice: estimate.price,
-      packages: estimate.packages,
-      exact: estimate.exact,
-    };
-  });
-
-  const total = rows.reduce((sum, row) => sum + (row.calculatedPrice ?? 0), 0);
-
-  return { rows, total: Math.round(total * 100) / 100, lastUpdated: null };
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
 }
 
 export default async function KosaricaPage() {
@@ -67,7 +53,7 @@ export default async function KosaricaPage() {
     );
   }
 
-  const [lidlBasket, kauflandBasket, { data: logs }] = await Promise.all([
+  const [lidlPartial, kauflandPartial, { data: logs }] = await Promise.all([
     buildBasket("lidl", items),
     buildBasket("kaufland", items),
     supabase
@@ -79,8 +65,11 @@ export default async function KosaricaPage() {
 
   const lastSuccess = (store: string) => logs?.find((l) => l.store === store)?.fetched_at ?? null;
 
-  lidlBasket.lastUpdated = lastSuccess("lidl");
-  kauflandBasket.lastUpdated = lastSuccess("kaufland");
+  const lidlLastUpdated = lastSuccess("lidl");
+  const kauflandLastUpdated = lastSuccess("kaufland");
+
+  const lidlBasket: StoreBasket = { ...lidlPartial, lastUpdated: lidlLastUpdated, isStale: isStale(lidlLastUpdated) };
+  const kauflandBasket: StoreBasket = { ...kauflandPartial, lastUpdated: kauflandLastUpdated, isStale: isStale(kauflandLastUpdated) };
 
   return (
     <div>

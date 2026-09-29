@@ -1,20 +1,38 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-plex-sans);
 
-  --color-cream: #faf7f0;
-  --color-ink: #1e2a20;
-  --color-ink-muted: #6b7280;
-  --color-brand: #3f6b4a;
-  --color-brand-dark: #1a1a1a;
-  --color-accent-green: #e4efc9;
-  --color-accent-green-ink: #4b6b2f;
-  --color-accent-peach: #f6e9d8;
-  --color-accent-peach-ink: #9c6b3e;
-  --color-accent-red: #fbe4e1;
-  --color-accent-red-ink: #b3463a;
+  /* Dizajn-direkcija (Zara, design/direction.md): topla papirnata baza +
+     bosiljak-zeleni accent. Accent je REZERVIRAN za CTA/aktivna stanja i
+     oznaku "jeftinije" - nikad dekorativno. */
+  --color-bg: #f7f6f1;
+  --color-surface-1: #ffffff;
+  --color-surface-2: #edebe1;
+  --color-border: #d6d2c4;
+  --color-ink: #1b2420;
+  --color-ink-muted: #5b6560;
+  --color-accent: #2f6b4f;
+  --color-accent-hover: #234f3b;
+
+  /* Nije dio Zarine palete - funkcionalna dopuna za greške/upozorenja
+     (zastarjeli cjenik, "cijena nedostupna") koju paleta ne pokriva. Ista
+     suzdržana, "ozbiljna" logika kao ostatak sustava, ne alarmantno crvena. */
+  --color-warn: #9e3c31;
+  --color-warn-bg: #f3e4e1;
+
+  /* Zadržano radi postojećih poziva u drugim ekranima (recepti, tjedni
+     plan) dok se cijela aplikacija ne prijeđe na novu paletu - vidi
+     PROJECT_STATUS.md za opseg preostalog posla. */
+  --color-cream: var(--color-bg);
+  --color-brand: var(--color-accent);
+  --color-brand-dark: var(--color-accent);
+  --color-accent-green: var(--color-surface-2);
+  --color-accent-green-ink: var(--color-accent);
+  --color-accent-peach: var(--color-surface-2);
+  --color-accent-peach-ink: var(--color-ink-muted);
+  --color-accent-red: var(--color-warn-bg);
+  --color-accent-red-ink: var(--color-warn);
 }
 
 @keyframes basket-fill {
@@ -45,4 +63,11 @@
 
 .animate-basket-bounce {
   animation: basket-bounce 0.9s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-basket-fill,
+  .animate-basket-bounce {
+    animation: none;
+  }
 }

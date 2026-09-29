@@ -34,17 +34,33 @@ function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+const NEGATION_WORD = "bez";
+
+/**
+ * "Tjestenina bez jaja" ne smije brojati kao pogodak za upit "jaja" - "bez"
+ * doslovno znači da sastojak NIJE u proizvodu, suprotno od onoga što tražimo.
+ * Traži cijelu riječ upita neposredno iza "bez" (word-boundary na oba kraja),
+ * ne samo substring - inače bi "bez" bilo koji drugi negiran sastojak
+ * (npr. "bez laktoze") lažno poništio nepovezanu riječ koja se slučajno
+ * pojavljuje negdje drugdje u istom nazivu.
+ */
+function isNegatedInTarget(word: string, target: string): boolean {
+  return new RegExp(`(^|\\s)${NEGATION_WORD}\\s+${escapeRegExp(word)}(\\s|$)`).test(target);
+}
+
 /**
  * Bodovanje jedne riječi upita naspram naziva proizvoda:
  * 2 = stoji kao cijela riječ (npr. "luk" u "Luk 750g")
  * 1 = poklapa se korijen/prefiks riječi, otporno na jedninu/množinu i
  *     skraćene varijante ("tikvice" -> "tikvica", "integralna" -> "integralne")
- * 0 = nema stvarne veze
+ * 0 = nema stvarne veze, ILI riječ stoji u nazivu samo unutar negacije
+ *     ("bez jaja") - vidi isNegatedInTarget
  * Riječi kraće od 3 znaka se ne boduju - premalo su specifične sam za sebe
  * i lako bi lažno pogodile nepovezan proizvod.
  */
 function wordScore(word: string, target: string): number {
   if (word.length < 3) return 0;
+  if (isNegatedInTarget(word, target)) return 0;
   if (new RegExp(`(^|\\s)${escapeRegExp(word)}(\\s|$)`).test(target)) return 2;
   const prefixLength = Math.min(word.length, Math.max(4, Math.ceil(word.length * 0.7)));
   return target.includes(word.slice(0, prefixLength)) ? 1 : 0;
@@ -77,11 +93,12 @@ function normalizedScore(queryWords: string[], target: string): number {
 // 0.6 propušta prave sinonime i varijante marke (sve vrste trajnog/svježeg
 // mlijeka za upit "mlijeko", sve vrste maslinovog ulja za "maslinovo ulje")
 // dok odbacuje slabe pogotke gdje se poklopi samo jedan pridjev ili kratki
-// prefiks. Prag NE rješava sam po sebi slučaj kad kratka jednorječna
-// namirnica (npr. "jaja") doslovno stoji u nazivu potpuno drugog proizvoda
-// (npr. tjestenina "bez jaja") - za to je presudan kategorijski filtar iznad
-// i, gdje treba, ručna korekcija naziva sastojka u receptu. Ispod praga =
-// kandidat se uopće ne broji, ni u prosjek ni u prikaz "N proizvoda".
+// prefiks. Slučaj kad kratka jednorječna namirnica (npr. "jaja") doslovno
+// stoji u nazivu potpuno drugog proizvoda (npr. tjestenina "bez jaja") je
+// riješen direktno u wordScore/isNegatedInTarget (negacijski filtar za
+// "bez X" fraze), ne pragom - prag ostaje čisto mjera "koliki dio upita se
+// poklapa". Ispod praga = kandidat se uopće ne broji, ni u prosjek ni u
+// prikaz "N proizvoda".
 export const MIN_MATCH_SIMILARITY = 0.6;
 
 export type MatchCandidate = {

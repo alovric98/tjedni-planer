@@ -39,8 +39,22 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+function ErrorState({ message }: { message: string }) {
+  return (
+    <div>
+      <h1 className="text-2xl font-bold text-ink">Košarica</h1>
+      <p className="mt-2 text-accent-red-ink">Greška kod dohvata košarice: {message}</p>
+    </div>
+  );
+}
+
 export default async function KosaricaPage() {
-  const items = await generateShoppingList();
+  let items: ShoppingListItem[];
+  try {
+    items = await generateShoppingList();
+  } catch (e) {
+    return <ErrorState message={e instanceof Error ? e.message : "Nepoznata greška"} />;
+  }
 
   if (items.length === 0) {
     return (
@@ -53,15 +67,25 @@ export default async function KosaricaPage() {
     );
   }
 
-  const [lidlPartial, kauflandPartial, { data: logs }] = await Promise.all([
-    buildBasket("lidl", items),
-    buildBasket("kaufland", items),
-    supabase
-      .from("price_fetch_log")
-      .select("store, fetched_at")
-      .eq("status", "success")
-      .order("fetched_at", { ascending: false }),
-  ]);
+  let lidlPartial: Omit<StoreBasket, "lastUpdated" | "isStale">;
+  let kauflandPartial: Omit<StoreBasket, "lastUpdated" | "isStale">;
+  let logs: { store: string; fetched_at: string }[] | null;
+  try {
+    const results = await Promise.all([
+      buildBasket("lidl", items),
+      buildBasket("kaufland", items),
+      supabase
+        .from("price_fetch_log")
+        .select("store, fetched_at")
+        .eq("status", "success")
+        .order("fetched_at", { ascending: false }),
+    ]);
+    lidlPartial = results[0];
+    kauflandPartial = results[1];
+    logs = results[2].data;
+  } catch (e) {
+    return <ErrorState message={e instanceof Error ? e.message : "Nepoznata greška"} />;
+  }
 
   const lastSuccess = (store: string) => logs?.find((l) => l.store === store)?.fetched_at ?? null;
 

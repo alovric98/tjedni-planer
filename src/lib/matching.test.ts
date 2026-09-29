@@ -22,6 +22,22 @@ describe("matchProductCandidates - prag pouzdanosti + kategorijski filtar (FIX 1
     expect(matchProductCandidates(index, "mrkva")).toHaveLength(0);
   });
 
+  it("ne pogađa 'jaja' u nazivu 'tjestenina bez jaja' (negacijski filtar za 'bez X' fraze)", () => {
+    const index = buildProductIndex([
+      testProduct({ id: "1", name: "Barilla tjestenina bez jaja 500g", price: 2.5 }),
+      testProduct({ id: "2", name: "Svježa jaja 10 kom", price: 2.1 }),
+    ]);
+    const candidates = matchProductCandidates(index, "jaja");
+    expect(candidates.map((c) => c.product.id)).toEqual(["2"]);
+  });
+
+  it("negacija djeluje i kad je negirani proizvod jedini kandidat (rezultat prazan, ne pogrešan pogodak)", () => {
+    const index = buildProductIndex([
+      testProduct({ id: "1", name: "Tjestenina bez jaja Penne 500g", price: 2.5 }),
+    ]);
+    expect(matchProductCandidates(index, "jaja")).toHaveLength(0);
+  });
+
   it("matchProduct je tanki wrapper - vraća najbolji kandidat ili null", () => {
     const index = buildProductIndex([testProduct({ id: "1", name: "Dukat trajno mlijeko 1L", price: 0.99 })]);
     expect(matchProduct(index, "mlijeko")?.id).toBe("1");

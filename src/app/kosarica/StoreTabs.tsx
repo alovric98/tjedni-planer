@@ -172,9 +172,14 @@ function CompareBar({ lidl, kaufland }: { lidl: StoreBasket; kaufland: StoreBask
   const lidlHasData = lidl.unpricedCount < lidl.rows.length;
   const kauflandHasData = kaufland.unpricedCount < kaufland.rows.length;
   const bothEmpty = !lidlHasData && !kauflandHasData;
-  const tie = !bothEmpty && lidl.total === kaufland.total;
-  const lidlCheaper = !bothEmpty && !tie && lidl.total < kaufland.total;
-  const kauflandCheaper = !bothEmpty && !tie && kaufland.total < lidl.total;
+  // Usporedba (i "Jeftinije" oznaka) ima smisla SAMO kad OBJE trgovine imaju
+  // barem jedan cijenjeni artikl - inače trgovina bez ijedne cijene ima
+  // total 0.00 € i lažno bi "pobijedila" pravu, nenultu cijenu druge
+  // trgovine (izgledalo bi kao da je besplatna, ne kao da nedostaju podaci).
+  const bothHaveData = lidlHasData && kauflandHasData;
+  const tie = bothHaveData && lidl.total === kaufland.total;
+  const lidlCheaper = bothHaveData && !tie && lidl.total < kaufland.total;
+  const kauflandCheaper = bothHaveData && !tie && kaufland.total < lidl.total;
   const diff = Math.abs(lidl.total - kaufland.total);
 
   return (
@@ -186,9 +191,11 @@ function CompareBar({ lidl, kaufland }: { lidl: StoreBasket; kaufland: StoreBask
       <p className="mt-2 text-center text-xs text-ink-muted">
         {bothEmpty
           ? "Nema dovoljno podataka o cijenama za usporedbu."
-          : tie
-            ? "Cijene su podjednake."
-            : `Razlika: ${diff.toFixed(2)} € u korist ${lidlCheaper ? "Lidla" : "Kauflanda"}`}
+          : !bothHaveData
+            ? `Nema dovoljno podataka za potpunu usporedbu - ${!lidlHasData ? "Lidl" : "Kaufland"} nema cijenu ni za jedan artikl.`
+            : tie
+              ? "Cijene su podjednake."
+              : `Razlika: ${diff.toFixed(2)} € u korist ${lidlCheaper ? "Lidla" : "Kauflanda"}`}
       </p>
     </div>
   );

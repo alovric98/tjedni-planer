@@ -67,7 +67,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .animate-basket-fill,
-  .animate-basket-bounce {
+  .animate-basket-bounce,
+  .animate-spin {
     animation: none;
   }
 }

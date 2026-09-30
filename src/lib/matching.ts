@@ -11,14 +11,37 @@ type IndexedProduct = {
 
 export type ProductIndex = IndexedProduct[];
 
+/**
+ * Lidlov cjenik sadrži doslovne duplikate (isti naziv/marka/cijena/količina,
+ * npr. "Mrkva 1kg" 6x - različiti barkodovi istog proizvoda) - provjereno
+ * 30.9.2026: ~5000 od ~10 800 Lidlovih artikala hrane. Duplikat ne nosi novu
+ * informaciju, a bez dedupliciranja bi težinski iskrivio svaki prosjek.
+ */
+function dedupeKey(p: ProductForMatching): string {
+  return [p.name, p.brand, p.price, p.net_quantity].join("|");
+}
+
 export function buildProductIndex(products: ProductForMatching[]): ProductIndex {
-  return products.map((product) => ({
-    product,
-    // Kaufland/Lidl nazivi često spajaju riječi interpunkcijom bez razmaka
-    // ("KLC.Tjestenina", "Naturel_OC") - to bi inače sakrilo prvu/zadnju
-    // riječ od provjere granice riječi ispod.
-    normalizedName: normalize(product.name.replace(/[._\-\/]+/g, " ")),
-  }));
+  const seen = new Set<string>();
+  const index: ProductIndex = [];
+  for (const product of products) {
+    const key = dedupeKey(product);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    index.push({
+      product,
+      // Kaufland/Lidl nazivi često spajaju riječi interpunkcijom bez razmaka
+      // ("KLC.Tjestenina", "Naturel_OC") - to bi inače sakrilo prvu/zadnju
+      // riječ od provjere granice riječi ispod.
+      normalizedName: normalizeProductName(product.name),
+    });
+  }
+  return index;
+}
+
+/** Naziv proizvoda u obliku u kojem ga matcher i pravila sastojaka uspoređuju. */
+export function normalizeProductName(name: string): string {
+  return normalize(name.replace(/[._\-\/,]+/g, " "));
 }
 
 function queryWordsOf(ingredientName: string): string[] {
@@ -116,6 +139,10 @@ function wordScoreForLiteral(word: string, target: string): number {
 // filtrirani i Košarica bi prikazivala "cijena nedostupna").
 const FOOD_CATEGORIES = new Set(["HRANA", "PIĆE"]);
 
+export function isFoodProduct(product: ProductForMatching): boolean {
+  return !product.category || FOOD_CATEGORIES.has(product.category.toUpperCase());
+}
+
 /**
  * wordScore je odozgo neograničen brojem riječi upita (max 2 po riječi), pa
  * ga normaliziramo na 0-1 da prag ispod ima stvarno značenje "koliki dio
@@ -143,13 +170,14 @@ export const MIN_MATCH_SIMILARITY = 0.6;
 export type MatchCandidate = {
   product: ProductForMatching;
   score: number; // 0-1, normalizirani wordScore
+  normalizedName: string;
 };
 
 /**
  * Vraća SVE kandidate iznad praga pouzdanosti (ne bira pobjednika) - FIX 1,
  * korak 0. `matchProduct` ispod je tanki wrapper zadržan zbog kompatibilnosti
- * postojećih poziva; stvarna logika cijene (prosjek/trimmed mean, korak 1-3)
- * živi u `src/lib/pricing.ts` i konzumira ovu listu.
+ * postojećih poziva; stvarna logika cijene (cijela pakiranja, rinfuza,
+ * odabir proizvoda) živi u `src/lib/pricing.ts`.
  */
 export function matchProductCandidates(index: ProductIndex, ingredientName: string): MatchCandidate[] {
   const queryWords = queryWordsOf(ingredientName);
@@ -166,10 +194,11 @@ export function matchProductCandidates(index: ProductIndex, ingredientName: stri
   const candidates: MatchCandidate[] = [];
   for (const entry of index) {
     if (wordScore(headWord, entry.normalizedName) === 0) continue;
-    const category = entry.product.category;
-    if (category && !FOOD_CATEGORIES.has(category.toUpperCase())) continue;
+    if (!isFoodProduct(entry.product)) continue;
     const score = normalizedScore(queryWords, entry.normalizedName);
-    if (score >= MIN_MATCH_SIMILARITY) candidates.push({ product: entry.product, score });
+    if (score >= MIN_MATCH_SIMILARITY) {
+      candidates.push({ product: entry.product, score, normalizedName: entry.normalizedName });
+    }
   }
 
   // Rangiranje samo za prikaz/reprezentativni naziv (kad je 1 kandidat) -
@@ -182,6 +211,43 @@ export function matchProductCandidates(index: ProductIndex, ingredientName: stri
   });
 
   return candidates;
+}
+
+// Prerađeni proizvodi u kojima sastojak stoji samo kao okus/dodatak ("Krekeri
+// vrhnje luk", "Mrkva kolač", "Indomie juha piletina"). Koristi se SAMO u
+// generičkom (fallback) uparivanju - sastojci s ručnim pravilima
+// (config/ingredient-rules.ts) imaju vlastiti include/exclude. Popis je
+// namjerno grub i konzervativan: bolje odbaciti graničnog kandidata nego
+// dopustiti da prerađevina iskrivi cijenu sirovine.
+const PROCESSED_PRODUCT_WORDS =
+  /(?:^| )(okus|okusom|snack|krekeri|cips|chips|kasica|kasic|kasa|torta|kolac|sendvic|juha|juhe|mix|bruschette|vrhnje|sok|nektar|jogurt|noodle|noodles|keks|namaz|pasteta|salata|burek|pizza|sladoled|panirana|panirani|pohana|pohani|hrskava|hrskavi|smokice|umak|cokolada|bombon|pire|bebe|baby|kids|burger|narezak|kobasica|hrenovke)(?= |$)/g;
+
+// Sastojak mora biti jedna od prve 4 riječi naziva ("Luk crveni 1kg",
+// "Mljeveni crni papar", "Extra djevičansko maslinovo ulje"); kasnije
+// pojavljivanje gotovo uvijek znači opis okusa ili sastava.
+const PRIMARY_WORD_WINDOW = 4;
+
+function isPrimaryMatch(normalizedName: string, queryWords: string[], headWord: string): boolean {
+  // Riječ s popisa prerađevina ne smije odbaciti proizvod kad je ona sama
+  // traženi sastojak ("kiselo vrhnje", "grčki jogurt", "zelena salata").
+  for (const m of normalizedName.matchAll(PROCESSED_PRODUCT_WORDS)) {
+    if (!queryWords.includes(m[1])) return false;
+  }
+  const leading = normalizedName.split(/\s+/).slice(0, PRIMARY_WORD_WINDOW).join(" ");
+  return wordScore(headWord, leading) > 0;
+}
+
+/**
+ * Kandidati za generičko (bez ručnog pravila) cijenjenje: isto što i
+ * `matchProductCandidates`, ali samo primarni proizvodi - ne prerađevine u
+ * kojima se sastojak tek spominje. Cijena iz ovakvog uparivanja u UI-u nosi
+ * oznaku "procjena".
+ */
+export function matchPrimaryCandidates(index: ProductIndex, ingredientName: string): MatchCandidate[] {
+  const queryWords = queryWordsOf(ingredientName);
+  if (queryWords.length === 0) return [];
+  const headWord = queryWords[queryWords.length - 1];
+  return matchProductCandidates(index, ingredientName).filter((c) => isPrimaryMatch(c.normalizedName, queryWords, headWord));
 }
 
 /**

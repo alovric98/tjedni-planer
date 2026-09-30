@@ -1,7 +1,36 @@
-import { matchProductCandidates, type ProductIndex } from "@/lib/matching";
+import { isFoodProduct, matchPrimaryCandidates, type ProductIndex } from "@/lib/matching";
 import type { ProductForMatching } from "@/lib/products";
 
 export type UnitBasis = "kg" | "l" | "kom";
+
+/**
+ * "cheapest" - najjeftiniji proizvod (na vagu: najjeftiniji €/kg).
+ * "average" - samo za proizvode na vagu (npr. sirovo meso): prosjek €/kg svih
+ * varijanti u referentnom skupu (file, s kosti, s kožom). Pakirani proizvodi
+ * se uvijek biraju po najjeftinijem - prosjek miješa standardne i premium
+ * proizvode (sol, ulje, začini) i daje nerealne cijene.
+ */
+export type PricingMode = "cheapest" | "average";
+
+/**
+ * Ručno pravilo za jedan sastojak (vidi `config/ingredient-rules.ts`).
+ * `include`/`exclude` se testiraju nad normaliziranim nazivom proizvoda
+ * (`normalizeProductName`). Sastojak bez pravila ide kroz generičko
+ * uparivanje i u UI-u je označen kao "procjena".
+ */
+export type PricingRule = {
+  key: string;
+  label: string;
+  /** Normalizirani nazivi sastojaka (bez dijakritika) koje ovo pravilo pokriva, uključujući sinonime. */
+  aliases: string[];
+  include: RegExp;
+  exclude?: RegExp;
+  mode: PricingMode;
+  /** Sastojak se u trgovini prodaje i na vagu (povrće, meso) - smije se računati proporcionalno po kg. */
+  looseOk: boolean;
+};
+
+export type RuleResolver = (ingredientName: string) => PricingRule | undefined;
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
@@ -27,137 +56,35 @@ export function convertToBasis(quantity: number, unit: string, basis: UnitBasis)
   return unit === "kom" ? quantity : null; // basis === "kom"
 }
 
-// ---------------------------------------------------------------------------
-// FIX 1 - prosječna jedinična cijena preko svih kandidata iznad praga
-// ---------------------------------------------------------------------------
-
-type CandidateUnitPrice = {
-  product: ProductForMatching;
-  basis: UnitBasis;
-  unitPrice: number; // € po kg / l / kom
-};
-
-/**
- * Jedinična cijena JEDNOG kandidata, u njegovoj vlastitoj osnovi.
- * Prioritet: `unit_price` iz cjenika (trgovina ga sama izračuna iz
- * deklarirane veličine na ambalaži i pouzdaniji je), zatim price/net_quantity
- * kad je barem `unit` poznat. `net_quantity` je u stvarnim cjenicima uvijek
- * MASA u kg, čak i za tekućine i "kom" proizvode (audit N8) - to unosi mali
- * sustavni error za tekućine (~8% za ulje, gustoća ≠ 1) kad se koristi kao
- * fallback, ali je jedini dostupan podatak kad `unit_price` nedostaje.
- * Kandidat bez ijednog pouzdanog izvora vraća null i NE ulazi u prosjek.
- */
-function unitPriceOfCandidate(product: ProductForMatching): CandidateUnitPrice | null {
-  const basis = product.unit as UnitBasis | null;
-  if (!basis) return null;
-  if (product.unit_price !== null && product.unit_price > 0) {
-    return { product, basis, unitPrice: product.unit_price };
-  }
-  if (product.net_quantity !== null && product.net_quantity > 0) {
-    return { product, basis, unitPrice: product.price / product.net_quantity };
-  }
+/** Osnova u kojoj se računa potreba: masa (g/kg), volumen (ml/l) ili komadi. */
+export function basisForUnit(unit: string): UnitBasis | null {
+  if (unit === "g" || unit === "kg") return "kg";
+  if (unit === "ml" || unit === "l") return "l";
+  if (unit === "kom") return "kom";
   return null;
 }
 
-export type AveragePriceResult = {
-  basis: UnitBasis | null;
-  /** Koliko je kandidata ušlo u prosjek (nakon grupiranja po osnovi). */
-  pricedCount: number;
-  /** Konačna jedinična cijena - pojedinačna, aritmetička sredina ili trimmed mean. */
-  unitPrice: number | null;
-  /** true kad se prikazuje oznaka "prosjek N proizvoda" (pricedCount > 1). */
-  usedAverage: boolean;
-  min: number | null;
-  max: number | null;
-  /** Koliko je vrijednosti odsječeno kao outlier (trimmed mean). */
-  trimmedOutCount: number;
-};
-
-/**
- * FIX 1, korak 2 - odabrana mjera: TRIMMED MEAN (odsječeno 10% s oba kraja,
- * zaokruženo prema dolje, za n<=4 obična aritmetička sredina jer uzorak nije
- * dovoljno velik da odsijecanje ima smisla).
- *
- * Zašto trimmed mean, a ne obična sredina ili medijan: vlasnik je izričito
- * tražio "prosjek", pa je aritmetička sredina polazna točka - ali izmjereni
- * kandidati na stvarnom cjeniku pokazuju da jedan pogrešno uparen proizvod
- * zna biti 10-30x skuplji od stvarne namirnice (audit: Nivea losion
- * 30,98 €/l usred pravog mlijeka ~1 €/l), pa bi ga obična sredina teško
- * iskrivila. Medijan bi za mali broj kandidata (2-4) odbacio i legitimnu
- * razliku između jeftinije i skuplje marke, što nije poanta "prosjeka".
- * Trimmed mean zadržava traženi "prosjek" i pravi raspon marki, a odsijeca
- * samo ekstreme koji bi dominirali običnu sredinu - uz prag i kategorijski
- * filtar iz matching.ts broj takvih ekstrema je već malen.
- */
-export function computeAveragePrice(candidates: CandidateUnitPrice[]): AveragePriceResult {
-  if (candidates.length === 0) {
-    return { basis: null, pricedCount: 0, unitPrice: null, usedAverage: false, min: null, max: null, trimmedOutCount: 0 };
-  }
-
-  const basis = candidates[0].basis;
-  const prices = candidates.map((c) => c.unitPrice).sort((a, b) => a - b);
-  const min = prices[0];
-  const max = prices[prices.length - 1];
-
-  if (prices.length === 1) {
-    return { basis, pricedCount: 1, unitPrice: prices[0], usedAverage: false, min, max, trimmedOutCount: 0 };
-  }
-
-  let sample = prices;
-  let trimmedOutCount = 0;
-  if (prices.length > 4) {
-    // 10% po strani, ali minimalno 1 s obje strane - kod tipičnih 5-9
-    // kandidata floor(10%) daje 0 i outlier (npr. Nivea losion) uopće ne bi
-    // bio odsječen, što poništava cijelu svrhu trimmed meana baš u
-    // najčešćem rasponu (audit: "mlijeko" 260 kandidata je rijetkost, 5-8
-    // stvarnih varijanti marke je tipično). Za veće uzorke (n>=10) ovo se
-    // svodi na točnih 10% po strani.
-    const perSide = Math.max(1, Math.floor(prices.length * 0.1));
-    sample = prices.slice(perSide, prices.length - perSide);
-    trimmedOutCount = prices.length - sample.length;
-  }
-
-  const unitPrice = sample.reduce((sum, p) => sum + p, 0) / sample.length;
-  return { basis, pricedCount: prices.length, unitPrice, usedAverage: true, min, max, trimmedOutCount };
-}
-
 // ---------------------------------------------------------------------------
-// FIX 2 - zaokruživanje na stvarna kupovna pakiranja
+// Veličina pakiranja i "na vagu" prepoznavanje iz cjenika
 // ---------------------------------------------------------------------------
 
-export type PackageBreakdown = { size: number; count: number };
-
-export type PurchaseResult = {
-  basis: UnitBasis;
-  neededQuantity: number; // u osnovi (kg/l/kom)
-  purchaseQuantity: number; // >= neededQuantity, stvarna količina za kupnju
-  packages: PackageBreakdown[];
-  /** true kad su korištene DEFAULT_PACKAGE_SIZES pretpostavke jer cjenik nije dao pouzdanu veličinu. */
-  packageSizeAssumed: boolean;
-};
+// Izričita veličina u nazivu: "500 g", "1kg", "0,75L", "6 kom", "4x125g", "6/1".
+const EXPLICIT_SIZE = /\d\s?(?:g|kg|dag|ml|cl|dl|l)\b|\d\s?kom\b|\d\s?x\s?\d|\d+\s?\/\s?1\b/i;
+// Izričite oznake da je cijena po kg, a ne po pakiranju ("rinfuza", "cca 500g").
+const LOOSE_CUE = /rinfuz|\bcca\b|\bca\./i;
 
 /**
- * FIX 2, korak 1.3 - zadane veličine pakiranja kad cjenik ne daje pouzdan
- * podatak (proizvod bez `unit`/`net_quantity`, ili "kom" proizvod bez broja
- * komada u nazivu). OVO JE EKSPLICITNA PRETPOSTAVKA, ne stvaran podatak iz
- * cjenika - zamijeniti čim se nađe pouzdaniji izvor (npr. barkod baza).
- * Prepoznavanje kategorije je namjerno grubo, po ključnoj riječi u nazivu
- * sastojka, jer cjenik ne daje dosljednu potkategoriju po namirnici (samo
- * široku HRANA/PIĆE/... podjelu - vidi matching.ts).
+ * `net_quantity` je u stvarnim cjenicima uvijek MASA u kg, čak i za tekućine
+ * (audit N8) - npr. ulje "500 ml" ima 0,458. Za volumen zato prvo čitamo
+ * izričitu veličinu iz naziva; masa je samo fallback (gustoća ~1).
  */
-const DEFAULT_PACKAGE_SIZES: { match: RegExp; basis: UnitBasis; sizes: number[] }[] = [
-  { match: /mlijek|sok|ulje|napitak|voda/i, basis: "l", sizes: [0.5, 1, 2] },
-  { match: /braš|šeć|riž/i, basis: "kg", sizes: [0.5, 1, 2, 5] },
-  { match: /jaj/i, basis: "kom", sizes: [6, 10] },
-];
-
-function defaultPackageSizes(ingredientName: string, basis: UnitBasis): number[] {
-  const rule = DEFAULT_PACKAGE_SIZES.find((r) => r.basis === basis && r.match.test(ingredientName));
-  if (rule) return rule.sizes;
-  // Nema specifičnog pravila za ovu namirnicu - pretpostavljamo JEDNO
-  // "standardno" pakiranje. Nikad ne izmišljamo manje pakiranje od stvarnog
-  // (to bi moglo podcijeniti potrebnu kupnju) - UI to označava kao pretpostavku.
-  return [1];
+function volumeFromName(name: string): number | null {
+  const m = name.match(/(\d+(?:[.,]\d+)?)\s*(ml|cl|dl|l)\b/i);
+  if (!m) return null;
+  const value = Number(m[1].replace(",", "."));
+  const unit = m[2].toLowerCase();
+  if (!(value > 0)) return null;
+  return unit === "l" ? value : unit === "dl" ? value / 10 : unit === "cl" ? value / 100 : value / 1000;
 }
 
 /**
@@ -173,97 +100,202 @@ function packageCountFromName(name: string): number | null {
   return null;
 }
 
-function packageSizeOfProduct(product: ProductForMatching, basis: UnitBasis): number | null {
+function packSizeOf(product: ProductForMatching, basis: UnitBasis): number | null {
+  const nq = product.net_quantity !== null && product.net_quantity > 0 ? product.net_quantity : null;
   if (basis === "kom") return packageCountFromName(product.name);
-  if (product.unit === basis && product.net_quantity && product.net_quantity > 0) {
-    return product.net_quantity;
-  }
-  return null;
-}
-
-function resolvePackageSizes(
-  products: ProductForMatching[],
-  basis: UnitBasis,
-  ingredientName: string
-): { sizes: number[]; assumed: boolean } {
-  const real = Array.from(
-    new Set(
-      products
-        .map((p) => packageSizeOfProduct(p, basis))
-        .filter((n): n is number => n !== null && n > 0)
-    )
-  ).sort((a, b) => a - b);
-
-  if (real.length > 0) return { sizes: real, assumed: false };
-  return { sizes: defaultPackageSizes(ingredientName, basis), assumed: true };
+  if (basis === "kg") return nq;
+  return volumeFromName(product.name) ?? (product.unit === "l" ? nq : null);
 }
 
 /**
- * FIX 2, korak 2 - najmanja kombinacija pakiranja koja PREKRIVA potrebnu
- * količinu, zaokruženo prema gore, nikad prema dolje. Budući da je
- * jedinična cijena (Fix 1) ista bez obzira na veličinu odabranog pakiranja
- * (real per-pakiranje cijene se ne koriste, samo prosječna jedinična
- * cijena x kupovna količina), "najjeftinija kombinacija" se svodi na
- * "najmanja ukupna kupovna količina" - to je jedini stvaran zahtjev iz
- * briefa (nikad manje od potrebnog) i jedino mjerljivo bez stvarnih
- * cijena po pakiranju. Implementirano kao standardni "coin change" (DP) nad
- * dostupnim veličinama pakiranja - radi u tisućinkama (g/ml/kom x1000) da
- * izbjegnemo greške decimalnog zbrajanja.
+ * `net_quantity = 1` je dvosmislen: pravo pakiranje od 1 kg ili nominalna
+ * oznaka za artikl koji se prodaje na vagu (cijena je tada po kg, ne po
+ * pakiranju - npr. Lidl "Svježa pileća prsa cca 500g" 5,99, Kaufland
+ * "Mrkva_OC" 0,89). Na vagu se računa samo uz izričitu oznaku u nazivu
+ * ("rinfuza", "cca") ili, za sastojke koje pravilo označi kao `looseOk`,
+ * kad naziv uopće ne navodi veličinu.
  */
-export function calculatePurchaseQuantity(
-  needed: number,
-  sizes: number[]
-): { purchaseQuantity: number; packages: PackageBreakdown[] } {
-  const SCALE = 1000;
-  const sizesInt = Array.from(new Set(sizes.map((s) => Math.round(s * SCALE)))).filter((s) => s > 0);
-  if (sizesInt.length === 0 || needed <= 0) {
-    return { purchaseQuantity: needed, packages: [] };
-  }
+function isSoldByWeight(product: ProductForMatching, looseOk: boolean): boolean {
+  if (product.net_quantity !== 1) return false;
+  if (LOOSE_CUE.test(product.name)) return true;
+  return looseOk && !EXPLICIT_SIZE.test(product.name);
+}
 
-  const neededInt = Math.max(1, Math.ceil(needed * SCALE));
-  const maxSize = Math.max(...sizesInt);
-  const upperBound = neededInt + maxSize;
+// ---------------------------------------------------------------------------
+// Ponude (jedan proizvod = jedna ponuda) i odabir
+// ---------------------------------------------------------------------------
 
-  const minCount = new Array<number>(upperBound + 1).fill(Infinity);
-  const lastSize = new Array<number>(upperBound + 1).fill(-1);
-  minCount[0] = 0;
-  for (let s = 1; s <= upperBound; s++) {
-    for (const size of sizesInt) {
-      if (size <= s && minCount[s - size] + 1 < minCount[s]) {
-        minCount[s] = minCount[s - size] + 1;
-        lastSize[s] = size;
-      }
+type PackOffer = {
+  kind: "pack";
+  product: ProductForMatching;
+  packSize: number;
+  packCount: number;
+  purchased: number; // packCount x packSize
+  cost: number;
+};
+
+type LooseOffer = {
+  kind: "loose";
+  product: ProductForMatching;
+  pricePerKg: number;
+};
+
+type Offer = PackOffer | LooseOffer;
+
+// Pakiranja unutar ovog faktora najmanje veličine smatraju se "istom
+// veličinom" (npr. 20 g i 17 g začina, 0,458 l i 0,5 l ulja) pa među njima
+// odlučuje cijena. Bez tolerancije bi nebitna razlika u gramima odlučivala o proizvodu.
+const SIZE_TIER_FACTOR = 1.1;
+
+function buildOffers(products: ProductForMatching[], basis: UnitBasis, need: number, looseOk: boolean): Offer[] {
+  const offers: Offer[] = [];
+  for (const product of products) {
+    if (!(product.price > 0)) continue;
+
+    if (basis === "kg" && isSoldByWeight(product, looseOk)) {
+      offers.push({ kind: "loose", product, pricePerKg: product.price });
+      continue;
     }
+    // Veličinu pakiranja koju ne možemo pouzdano odrediti ne nagađamo -
+    // proizvod se preskače (cjenik s nejasnim "1" i bez veličine u nazivu).
+    if (product.net_quantity === 1 && !EXPLICIT_SIZE.test(product.name)) continue;
+
+    const packSize = packSizeOf(product, basis);
+    if (packSize === null) continue;
+    const packCount = Math.max(1, Math.ceil(need / packSize - 1e-9));
+    offers.push({ kind: "pack", product, packSize, packCount, purchased: packCount * packSize, cost: packCount * product.price });
+  }
+  return offers;
+}
+
+function displayName(product: ProductForMatching): string {
+  return product.brand && product.brand !== "#" ? `${product.name} (${product.brand})` : product.name;
+}
+
+export type PurchaseResult = {
+  basis: UnitBasis;
+  neededQuantity: number; // u osnovi (kg/l/kom)
+  /** Stvarno kupljena količina: cijela pakiranja (>= potrebno) ili, na vagu, točno potrebno. */
+  purchaseQuantity: number;
+  /** null kad se kupuje na vagu. */
+  packCount: number | null;
+  packSize: number | null;
+  /** Višak koji ostaje nakon kupnje (purchaseQuantity - neededQuantity), gubitak. */
+  surplus: number;
+  soldByWeight: boolean;
+  /** Samo na vagu: €/kg korišten za izračun (najjeftiniji ili prosjek varijanti). */
+  pricePerKg: number | null;
+};
+
+export type PartPriceResult = {
+  name: string;
+  /** Naziv (+ marka) odabranog proizvoda; null kad je cijena prosjek više proizvoda ili nedostupna. */
+  matchedName: string | null;
+  /** Koliko je proizvoda ušlo u razmatranje (nakon filtara i dedupliciranja). */
+  offerCount: number;
+  /** Koliko je varijanti ušlo u prosjek (1 = nije prosjek). */
+  averagedCount: number;
+  /** true = sastojak nema ručno pravilo, pa je cijena generička procjena. */
+  estimated: boolean;
+  purchase: PurchaseResult | null;
+  /** Cijena kupnje, zaokružena na 2 decimale. null = cijena nedostupna. */
+  itemPrice: number | null;
+};
+
+function unavailable(name: string, offerCount: number, estimated: boolean): PartPriceResult {
+  return { name, matchedName: null, offerCount, averagedCount: 0, estimated, purchase: null, itemPrice: null };
+}
+
+function productsForIngredient(index: ProductIndex, name: string, rule: PricingRule | undefined): ProductForMatching[] {
+  if (!rule) return matchPrimaryCandidates(index, name).map((c) => c.product);
+  return index
+    .filter(
+      (e) =>
+        isFoodProduct(e.product) &&
+        rule.include.test(e.normalizedName) &&
+        !(rule.exclude && rule.exclude.test(e.normalizedName))
+    )
+    .map((e) => e.product);
+}
+
+/**
+ * Cijena jednog (nesloženog) sastojka. Pravila odabira:
+ * 1. Sastojak koji se prodaje na vagu (`looseOk`) računa se proporcionalno po
+ *    kg - to je jedini izuzetak od cijelih pakiranja.
+ * 2. Inače se kupuje CIJELO pakiranje: najmanja veličina koja jednim
+ *    pakiranjem pokriva potrebu, a među jednakim veličinama najjeftinije.
+ *    Višak je gubitak i prikazuje se.
+ * 3. Ako nijedno jedno pakiranje ne pokriva potrebu, kupuje se N istih
+ *    pakiranja (najmanja ukupna kupljena količina, pa najjeftinije).
+ * 4. Nikad proporcija pakiranja, nikad prosjek pakiranja, nikad izmišljena
+ *    veličina - bez pouzdanog podatka cijena je nedostupna.
+ */
+export function priceIngredientPart(
+  index: ProductIndex,
+  name: string,
+  quantity: number,
+  unit: string,
+  rule?: PricingRule
+): PartPriceResult {
+  const estimated = !rule;
+  const basis = basisForUnit(unit);
+  if (!basis || !(quantity > 0)) return unavailable(name, 0, estimated);
+  const need = convertToBasis(quantity, unit, basis);
+  if (need === null) return unavailable(name, 0, estimated);
+
+  const offers = buildOffers(productsForIngredient(index, name, rule), basis, need, rule?.looseOk ?? false);
+  if (offers.length === 0) return unavailable(name, 0, estimated);
+
+  const loose = offers.filter((o): o is LooseOffer => o.kind === "loose");
+  if (loose.length > 0) {
+    const cheapest = loose.reduce((a, b) => (b.pricePerKg < a.pricePerKg ? b : a));
+    const averaged = rule?.mode === "average" && loose.length > 1;
+    const pricePerKg = averaged ? loose.reduce((sum, o) => sum + o.pricePerKg, 0) / loose.length : cheapest.pricePerKg;
+    return {
+      name,
+      matchedName: averaged ? null : displayName(cheapest.product),
+      offerCount: offers.length,
+      averagedCount: averaged ? loose.length : 1,
+      estimated,
+      purchase: {
+        basis,
+        neededQuantity: need,
+        purchaseQuantity: need,
+        packCount: null,
+        packSize: null,
+        surplus: 0,
+        soldByWeight: true,
+        pricePerKg,
+      },
+      itemPrice: round2(need * pricePerKg),
+    };
   }
 
-  let chosenSum = -1;
-  for (let s = neededInt; s <= upperBound; s++) {
-    if (minCount[s] !== Infinity) {
-      chosenSum = s;
-      break;
-    }
-  }
+  const packs = offers.filter((o): o is PackOffer => o.kind === "pack");
+  const singles = packs.filter((o) => o.packCount === 1);
+  const pool = singles.length > 0 ? singles : packs;
+  const smallest = Math.min(...pool.map((o) => o.purchased));
+  const tier = pool.filter((o) => o.purchased <= smallest * SIZE_TIER_FACTOR);
+  const best = tier.reduce((a, b) => (b.cost < a.cost ? b : a));
 
-  // Nijedna kombinacija do gornje granice ne pokriva potrebno (samo teoretski
-  // moguće uz jako neobične veličine) - vrati jedno najveće dostupno
-  // pakiranje kao najbolju raspoloživu aproksimaciju; nikad manje od njega.
-  if (chosenSum === -1) {
-    return { purchaseQuantity: maxSize / SCALE, packages: [{ size: maxSize / SCALE, count: 1 }] };
-  }
-
-  const counts = new Map<number, number>();
-  let s = chosenSum;
-  while (s > 0) {
-    const size = lastSize[s];
-    counts.set(size, (counts.get(size) ?? 0) + 1);
-    s -= size;
-  }
-
-  const packages = Array.from(counts.entries())
-    .map(([size, count]) => ({ size: size / SCALE, count }))
-    .sort((a, b) => b.size - a.size);
-
-  return { purchaseQuantity: chosenSum / SCALE, packages };
+  return {
+    name,
+    matchedName: displayName(best.product),
+    offerCount: offers.length,
+    averagedCount: 1,
+    estimated,
+    purchase: {
+      basis,
+      neededQuantity: need,
+      purchaseQuantity: best.purchased,
+      packCount: best.packCount,
+      packSize: best.packSize,
+      surplus: best.purchased - need,
+      soldByWeight: false,
+      pricePerKg: null,
+    },
+    itemPrice: round2(best.cost),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -285,80 +317,8 @@ export function splitCompoundIngredientName(name: string): { parts: string[]; mo
 }
 
 // ---------------------------------------------------------------------------
-// Orkestracija po dijelu sastojka: kandidati (matching.ts) -> prosjek (Fix 1)
-// -> kupovna količina (Fix 2) -> cijena. Redoslijed je obavezan po specu.
+// Redak košarice
 // ---------------------------------------------------------------------------
-
-export type PartPriceResult = {
-  name: string;
-  /** Naziv (+ marka) prikazanog proizvoda - postavljen SAMO kad je pricedCount === 1. */
-  matchedName: string | null;
-  matchCandidateCount: number; // svi kandidati iznad praga sličnosti (prije filtriranja po osnovi/cijeni)
-  averagePrice: AveragePriceResult;
-  purchase: PurchaseResult | null;
-  /** averagePrice.unitPrice x purchase.purchaseQuantity, zaokruženo na 2 decimale. null = cijena nedostupna. */
-  itemPrice: number | null;
-};
-
-function priceUnavailable(name: string, matchCandidateCount: number, avg: AveragePriceResult): PartPriceResult {
-  return { name, matchedName: null, matchCandidateCount, averagePrice: avg, purchase: null, itemPrice: null };
-}
-
-export function priceIngredientPart(index: ProductIndex, name: string, quantity: number, unit: string): PartPriceResult {
-  const matched = matchProductCandidates(index, name);
-  const priced = matched
-    .map((c) => unitPriceOfCandidate(c.product))
-    .filter((p): p is CandidateUnitPrice => p !== null);
-
-  // Kandidati moraju biti u ISTOJ osnovi (kg/l/kom) da bi ušli u isti
-  // prosjek (spec: "kandidati s različitim osnovama isključeni iz prosjeka,
-  // ne pomiješani") - grupiramo po osnovi i biramo najveću grupu; ostatak se
-  // ne miješa u izračun.
-  const groups = new Map<UnitBasis, CandidateUnitPrice[]>();
-  for (const p of priced) {
-    const arr = groups.get(p.basis) ?? [];
-    arr.push(p);
-    groups.set(p.basis, arr);
-  }
-  let chosenGroup: CandidateUnitPrice[] = [];
-  for (const arr of groups.values()) {
-    if (arr.length > chosenGroup.length) chosenGroup = arr;
-  }
-
-  const avg = computeAveragePrice(chosenGroup);
-  if (!avg.basis || avg.unitPrice === null) {
-    return priceUnavailable(name, matched.length, avg);
-  }
-
-  const neededInBasis = convertToBasis(quantity, unit, avg.basis);
-  if (neededInBasis === null) {
-    return priceUnavailable(name, matched.length, avg);
-  }
-
-  const { sizes, assumed } = resolvePackageSizes(
-    chosenGroup.map((c) => c.product),
-    avg.basis,
-    name
-  );
-  const { purchaseQuantity, packages } = calculatePurchaseQuantity(neededInBasis, sizes);
-  const itemPrice = round2(avg.unitPrice * purchaseQuantity);
-
-  const representative = avg.pricedCount === 1 ? chosenGroup[0].product : null;
-  const matchedName = representative
-    ? representative.brand && representative.brand !== "#"
-      ? `${representative.name} (${representative.brand})`
-      : representative.name
-    : null;
-
-  return {
-    name,
-    matchedName,
-    matchCandidateCount: matched.length,
-    averagePrice: avg,
-    purchase: { basis: avg.basis, neededQuantity: neededInBasis, purchaseQuantity, packages, packageSizeAssumed: assumed },
-    itemPrice,
-  };
-}
 
 export type BasketLineResult = {
   ingredient: string;
@@ -377,12 +337,13 @@ export type BasketLineResult = {
 
 export function priceShoppingItem(
   index: ProductIndex,
-  item: { name: string; quantity: number; unit: string }
+  item: { name: string; quantity: number; unit: string },
+  ruleFor: RuleResolver = () => undefined
 ): BasketLineResult {
   const { parts: nameParts, mode } = splitCompoundIngredientName(item.name);
 
   if (mode === "single") {
-    const part = priceIngredientPart(index, item.name, item.quantity, item.unit);
+    const part = priceIngredientPart(index, item.name, item.quantity, item.unit, ruleFor(item.name));
     return {
       ingredient: item.name,
       quantity: item.quantity,
@@ -402,7 +363,7 @@ export function priceShoppingItem(
     // pretpostavka bez izmjene sheme recepata (audit N5); alternativa bi
     // bila prikazati oba dijela bez ikakve količine, što je gore.
     const share = item.quantity / nameParts.length;
-    const parts = nameParts.map((p) => priceIngredientPart(index, p, share, item.unit));
+    const parts = nameParts.map((p) => priceIngredientPart(index, p, share, item.unit, ruleFor(p)));
     const priced = parts.filter((p) => p.itemPrice !== null);
     const totalPrice = priced.length > 0 ? round2(priced.reduce((sum, p) => sum + (p.itemPrice ?? 0), 0)) : null;
     return {
@@ -420,7 +381,7 @@ export function priceShoppingItem(
 
   // mode === "or": cijeni obje alternative za punu količinu i odaberi
   // jeftiniju od onih koje uopće imaju cijenu (kupac uzima jedno ILI drugo).
-  const parts = nameParts.map((p) => priceIngredientPart(index, p, item.quantity, item.unit));
+  const parts = nameParts.map((p) => priceIngredientPart(index, p, item.quantity, item.unit, ruleFor(p)));
   let chosenIndex: number | null = null;
   for (let i = 0; i < parts.length; i++) {
     const price = parts[i].itemPrice;

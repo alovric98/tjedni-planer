@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { formatQuantity, formatBasisQuantity } from "@/lib/format";
+import { formatQuantity, formatMeasure } from "@/lib/format";
 import type { BasketLineResult, PartPriceResult } from "@/lib/pricing";
 import type { StoreKey } from "@/config/store-options";
 
@@ -47,39 +47,41 @@ function InfoIcon() {
   );
 }
 
-/** "Treba / Kupuješ" + oznaka "prosjek N proizvoda" (FIX 1 + FIX 2 u UI-u). */
+/** "Kupuješ" (cijela pakiranja ili na vagu) + oznake prosjeka/procjene. */
 function PartPurchaseLine({ part }: { part: PartPriceResult }) {
   if (part.itemPrice === null || !part.purchase) {
     return <p className="text-xs text-warn">cijena nedostupna</p>;
   }
-  const { purchase, averagePrice } = part;
-  const rangeLabel =
-    averagePrice.min !== null && averagePrice.max !== null
-      ? `${averagePrice.min.toFixed(2)}–${averagePrice.max.toFixed(2)} €/${purchase.basis}`
-      : "";
-  const trimmedLabel =
-    averagePrice.trimmedOutCount > 0
-      ? `, ${averagePrice.trimmedOutCount} ${averagePrice.trimmedOutCount === 1 ? "ekstrem izbačen" : "ekstrema izbačeno"} iz prosjeka`
-      : "";
+  const { purchase } = part;
 
   return (
     <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-muted">
-      <span>Kupuješ: {formatBasisQuantity(purchase.purchaseQuantity, purchase.basis)}</span>
-      {purchase.packageSizeAssumed && (
-        <span
-          className="text-ink-muted"
-          title="Cjenik ne daje veličinu pakiranja za ovaj proizvod - koristi se pretpostavljena standardna veličina."
-        >
-          · pretpostavljeno pakiranje
+      {purchase.soldByWeight ? (
+        <span>
+          Na vagu: {formatMeasure(purchase.purchaseQuantity, purchase.basis)} × {purchase.pricePerKg?.toFixed(2)} €/kg
+        </span>
+      ) : (
+        <span>
+          Kupuješ: {purchase.packCount}× {formatMeasure(purchase.packSize ?? 0, purchase.basis)}
+          {purchase.surplus > 0.0005 && <> · višak {formatMeasure(purchase.surplus, purchase.basis)}</>}
         </span>
       )}
-      {averagePrice.usedAverage && (
+      {part.averagedCount > 1 && (
         <span
           className="inline-flex items-center gap-1 font-semibold text-ink-muted"
-          title={`Prosjek ${averagePrice.pricedCount} proizvoda (${rangeLabel}${trimmedLabel})`}
+          title={`Prosjek ${part.averagedCount} varijanti istog proizvoda (npr. file, s kosti, s kožom)`}
         >
           <InfoIcon />
-          prosjek {averagePrice.pricedCount} proizvoda
+          prosjek {part.averagedCount} varijanti
+        </span>
+      )}
+      {part.estimated && (
+        <span
+          className="inline-flex items-center gap-1 font-semibold text-ink-muted"
+          title="Za ovaj sastojak nema ručno definiranog pravila - proizvod je odabran generičkim uparivanjem pa cijena može odstupati."
+        >
+          <InfoIcon />
+          procjena
         </span>
       )}
     </p>

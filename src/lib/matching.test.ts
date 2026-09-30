@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildProductIndex, matchProductCandidates, matchProduct } from "@/lib/matching";
+import { buildProductIndex, matchProductCandidates, matchPrimaryCandidates, matchProduct } from "@/lib/matching";
 import { testProduct } from "@/lib/test-helpers";
 
 describe("matchProductCandidates - prag pouzdanosti + kategorijski filtar (FIX 1, korak 0)", () => {
@@ -85,5 +85,45 @@ describe("matchProductCandidates - prag pouzdanosti + kategorijski filtar (FIX 1
     const index = buildProductIndex([testProduct({ id: "1", name: "Dukat trajno mlijeko 1L", price: 0.99 })]);
     expect(matchProduct(index, "mlijeko")?.id).toBe("1");
     expect(matchProduct(index, "nepostojeca namirnica xyz")).toBeNull();
+  });
+});
+
+describe("buildProductIndex - deduplikacija", () => {
+  it("spaja doslovne duplikate (isti naziv/marka/cijena/količina), ali ne različite cijene ili veličine", () => {
+    const index = buildProductIndex([
+      testProduct({ id: "1", name: "Mrkva 1kg", price: 1.29, net_quantity: 1 }),
+      testProduct({ id: "2", name: "Mrkva 1kg", price: 1.29, net_quantity: 1 }),
+      testProduct({ id: "3", name: "Mrkva 1kg", price: 1.39, net_quantity: 1 }),
+      testProduct({ id: "4", name: "Mrkva 1kg", price: 1.29, net_quantity: 2 }),
+    ]);
+    expect(index.map((e) => e.product.id)).toEqual(["1", "3", "4"]);
+  });
+});
+
+describe("matchPrimaryCandidates - samo primarni proizvodi", () => {
+  it("izbacuje prerađevine u kojima je sastojak samo okus ili dodatak", () => {
+    const index = buildProductIndex([
+      testProduct({ id: "1", name: "Luk crveni 1kg", price: 0.79 }),
+      testProduct({ id: "2", name: "Tuc krekeri vrhnje luk 100 g", price: 0.75 }),
+      testProduct({ id: "3", name: "Bruschette Maretti luk i vrhnje", price: 1.35 }),
+      testProduct({ id: "4", name: "Čips rebrasti, vrhnje i luk 150 g", price: 1.15 }),
+    ]);
+    expect(matchPrimaryCandidates(index, "luk").map((c) => c.product.id)).toEqual(["1"]);
+  });
+
+  it("sastojak koji je i sam na popisu prerađevina ostaje ('kiselo vrhnje', 'grčki jogurt')", () => {
+    const index = buildProductIndex([
+      testProduct({ id: "1", name: "Dukat kiselo vrhnje 180 g", price: 0.99 }),
+      testProduct({ id: "2", name: "Krekeri vrhnje i luk 100 g", price: 0.79 }),
+    ]);
+    expect(matchPrimaryCandidates(index, "kiselo vrhnje").map((c) => c.product.id)).toEqual(["1"]);
+  });
+
+  it("sastojak mora biti među prvim riječima naziva", () => {
+    const index = buildProductIndex([
+      testProduct({ id: "1", name: "Mrkva košarica 500 g", price: 0.99 }),
+      testProduct({ id: "2", name: "Maggi krem od povrća s ukusom slatke mrkva i luka 52 g", price: 1.29 }),
+    ]);
+    expect(matchPrimaryCandidates(index, "mrkva").map((c) => c.product.id)).toEqual(["1"]);
   });
 });

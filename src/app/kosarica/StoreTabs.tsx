@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { formatQuantity, formatBasisQuantity } from "@/lib/format";
 import type { BasketLineResult, PartPriceResult } from "@/lib/pricing";
+import type { StoreKey } from "@/config/store-options";
 
 export type StoreBasket = {
   rows: BasketLineResult[];
@@ -12,7 +13,11 @@ export type StoreBasket = {
   isStale: boolean;
 };
 
-const STORE_LABEL = { lidl: "Lidl", kaufland: "Kaufland" } as const;
+export type StoreEntry = {
+  key: StoreKey;
+  label: string;
+  basket: StoreBasket;
+};
 
 function formatDate(iso: string | null): string {
   if (!iso) return "nikad";
@@ -140,13 +145,11 @@ function BasketRow({ row }: { row: BasketLineResult }) {
   );
 }
 
-function StaleBanner({ store, basket }: { store: keyof typeof STORE_LABEL; basket: StoreBasket }) {
+function StaleBanner({ label, basket }: { label: string; basket: StoreBasket }) {
   if (!basket.isStale) return null;
   return (
     <div className="mb-3 rounded-xl border border-warn/30 bg-warn-bg p-4">
-      <p className="text-sm font-semibold text-warn">
-        Cijene za {STORE_LABEL[store]} nisu ažurirane danas
-      </p>
+      <p className="text-sm font-semibold text-warn">Cijene za {label} nisu ažurirane danas</p>
       <p className="mt-1 text-xs text-warn">
         Zadnji uspješan dohvat: {formatDate(basket.lastUpdated)}. Prikazane cijene mogu biti stare i ne odražavati
         stanje u trgovini.
@@ -155,10 +158,10 @@ function StaleBanner({ store, basket }: { store: keyof typeof STORE_LABEL; baske
   );
 }
 
-function BasketView({ store, basket }: { store: keyof typeof STORE_LABEL; basket: StoreBasket }) {
+function BasketView({ label, basket }: { label: string; basket: StoreBasket }) {
   return (
     <div>
-      <StaleBanner store={store} basket={basket} />
+      <StaleBanner label={label} basket={basket} />
       <div className="divide-y divide-border">
         {basket.rows.map((row, i) => (
           <BasketRow key={i} row={row} />
@@ -174,36 +177,46 @@ function BasketView({ store, basket }: { store: keyof typeof STORE_LABEL; basket
  * scrolla popis. Ogromne tabular brojke, zelena "Jeftinije" oznaka na
  * povoljnijoj trgovini - jedina stvar na ekranu dizajnirana da se pročita
  * bez fokusiranja pogleda, dok korisnik drži košaru u dućanu.
+ *
+ * "Jeftinije" usporedba ima smisla samo kad su TOČNO dvije trgovine
+ * odabrane (današnji realan slučaj - Lidl+Kaufland) - s jednom trgovinom
+ * nema s čim usporediti, a s 3+ (buduće trgovine) parna "jeftinije" oznaka
+ * gubi značenje pa se prikazuju samo ukupni iznosi bez badgea.
  */
-function CompareBar({ lidl, kaufland }: { lidl: StoreBasket; kaufland: StoreBasket }) {
-  const lidlHasData = lidl.unpricedCount < lidl.rows.length;
-  const kauflandHasData = kaufland.unpricedCount < kaufland.rows.length;
-  const bothEmpty = !lidlHasData && !kauflandHasData;
-  // Usporedba (i "Jeftinije" oznaka) ima smisla SAMO kad OBJE trgovine imaju
-  // barem jedan cijenjeni artikl - inače trgovina bez ijedne cijene ima
-  // total 0.00 € i lažno bi "pobijedila" pravu, nenultu cijenu druge
-  // trgovine (izgledalo bi kao da je besplatna, ne kao da nedostaju podaci).
-  const bothHaveData = lidlHasData && kauflandHasData;
-  const tie = bothHaveData && lidl.total === kaufland.total;
-  const lidlCheaper = bothHaveData && !tie && lidl.total < kaufland.total;
-  const kauflandCheaper = bothHaveData && !tie && kaufland.total < lidl.total;
-  const diff = Math.abs(lidl.total - kaufland.total);
+function CompareBar({ stores }: { stores: StoreEntry[] }) {
+  const withData = stores.map((s) => ({ ...s, hasData: s.basket.unpricedCount < s.basket.rows.length }));
+  const bothHaveData = withData.length === 2 && withData.every((s) => s.hasData);
+
+  let cheaperKey: string | null = null;
+  let tie = false;
+  let diff = 0;
+  if (bothHaveData) {
+    const [a, b] = withData;
+    tie = a.basket.total === b.basket.total;
+    if (!tie) cheaperKey = a.basket.total < b.basket.total ? a.key : b.key;
+    diff = Math.abs(a.basket.total - b.basket.total);
+  }
+
+  const bothEmpty = withData.length === 2 && withData.every((s) => !s.hasData);
 
   return (
     <div className="sticky bottom-24 z-20 mt-4 rounded-2xl border border-border bg-surface-1 p-4 shadow-[0_-2px_12px_rgba(27,36,32,0.10)] sm:bottom-4">
-      <div className="grid grid-cols-2 gap-3">
-        <StoreTotalColumn name="Lidl" basket={lidl} isCheaper={lidlCheaper} />
-        <StoreTotalColumn name="Kaufland" basket={kaufland} isCheaper={kauflandCheaper} />
+      <div className={`grid gap-3 ${withData.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+        {withData.map((s) => (
+          <StoreTotalColumn key={s.key} name={s.label} basket={s.basket} isCheaper={s.key === cheaperKey} />
+        ))}
       </div>
-      <p className="mt-2 text-center text-xs text-ink-muted">
-        {bothEmpty
-          ? "Nema dovoljno podataka o cijenama za usporedbu."
-          : !bothHaveData
-            ? `Nema dovoljno podataka za potpunu usporedbu - ${!lidlHasData ? "Lidl" : "Kaufland"} nema cijenu ni za jedan artikl.`
-            : tie
-              ? "Cijene su podjednake."
-              : `Razlika: ${diff.toFixed(2)} € u korist ${lidlCheaper ? "Lidla" : "Kauflanda"}`}
-      </p>
+      {withData.length === 2 && (
+        <p className="mt-2 text-center text-xs text-ink-muted">
+          {bothEmpty
+            ? "Nema dovoljno podataka o cijenama za usporedbu."
+            : !bothHaveData
+              ? `Nema dovoljno podataka za potpunu usporedbu - ${!withData[0].hasData ? withData[0].label : withData[1].label} nema cijenu ni za jedan artikl.`
+              : tie
+                ? "Cijene su podjednake."
+                : `Razlika: ${diff.toFixed(2)} € u korist ${withData.find((s) => s.key === cheaperKey)?.label}`}
+        </p>
+      )}
     </div>
   );
 }
@@ -230,37 +243,36 @@ function StoreTotalColumn({ name, basket, isCheaper }: { name: string; basket: S
   );
 }
 
-export function StoreTabs({ lidl, kaufland }: { lidl: StoreBasket; kaufland: StoreBasket }) {
-  const [store, setStore] = useState<"lidl" | "kaufland">("lidl");
+export function StoreTabs({ stores }: { stores: StoreEntry[] }) {
+  const [activeKey, setActiveKey] = useState<string>(stores[0]?.key ?? "");
+  const active = stores.find((s) => s.key === activeKey) ?? stores[0];
 
   return (
     <div className="mt-4">
-      <div className="inline-flex gap-1 rounded-full bg-surface-2 p-1">
-        <button
-          type="button"
-          onClick={() => setStore("lidl")}
-          className={`min-h-12 rounded-full px-5 py-2 text-sm font-semibold transition-colors duration-200 ${
-            store === "lidl" ? "bg-accent text-white" : "text-ink-muted"
-          }`}
-        >
-          Lidl
-        </button>
-        <button
-          type="button"
-          onClick={() => setStore("kaufland")}
-          className={`min-h-12 rounded-full px-5 py-2 text-sm font-semibold transition-colors duration-200 ${
-            store === "kaufland" ? "bg-accent text-white" : "text-ink-muted"
-          }`}
-        >
-          Kaufland
-        </button>
-      </div>
+      {stores.length > 1 && (
+        <div className="inline-flex gap-1 rounded-full bg-surface-2 p-1">
+          {stores.map((s) => (
+            <button
+              key={s.key}
+              type="button"
+              onClick={() => setActiveKey(s.key)}
+              className={`min-h-12 rounded-full px-5 py-2 text-sm font-semibold transition-colors duration-200 ${
+                s.key === active.key ? "bg-accent text-white" : "text-ink-muted"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
 
-      <div className="mt-4">
-        <BasketView store={store} basket={store === "lidl" ? lidl : kaufland} />
-      </div>
+      {active && (
+        <div className="mt-4">
+          <BasketView label={active.label} basket={active.basket} />
+        </div>
+      )}
 
-      <CompareBar lidl={lidl} kaufland={kaufland} />
+      <CompareBar stores={stores} />
     </div>
   );
 }

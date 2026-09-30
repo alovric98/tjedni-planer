@@ -1,4 +1,5 @@
 import { normalize } from "@/lib/normalize";
+import { synonymsOf } from "@/lib/ingredient-synonyms";
 import type { ProductForMatching } from "@/lib/products";
 
 const STOPWORDS = new Set(["i", "u", "s", "sa", "za", "od", "na", "po", "te", "ili"]);
@@ -16,7 +17,7 @@ export function buildProductIndex(products: ProductForMatching[]): ProductIndex 
     // Kaufland/Lidl nazivi često spajaju riječi interpunkcijom bez razmaka
     // ("KLC.Tjestenina", "Naturel_OC") - to bi inače sakrilo prvu/zadnju
     // riječ od provjere granice riječi ispod.
-    normalizedName: normalize(product.name.replace(/[._\-/]+/g, " ")),
+    normalizedName: normalize(product.name.replace(/[._\-\/]+/g, " ")),
   }));
 }
 
@@ -49,7 +50,8 @@ function isNegatedInTarget(word: string, target: string): boolean {
 }
 
 /**
- * Bodovanje jedne riječi upita naspram naziva proizvoda:
+ * Bodovanje jedne riječi (ili njene regionalne sinonim-alternative, npr.
+ * "biber" -> "papar") naspram naziva proizvoda:
  * 2 = stoji kao cijela riječ (npr. "luk" u "Luk 750g")
  * 1 = poklapa se korijen/prefiks riječi, otporno na jedninu/množinu i
  *     skraćene varijante ("tikvice" -> "tikvica", "integralna" -> "integralne")
@@ -60,6 +62,21 @@ function isNegatedInTarget(word: string, target: string): boolean {
  */
 function wordScore(word: string, target: string): number {
   if (word.length < 3) return 0;
+  let best = 0;
+  for (const candidate of [word, ...synonymsOf(word)]) {
+    const score = wordScoreForLiteral(candidate, target);
+    if (score > best) best = score;
+  }
+  return best;
+}
+
+/**
+ * Stvarna provjera jedne doslovne riječi (bez sinonima) naspram naziva
+ * proizvoda - dijeljena i za izvornu riječ upita i za svaku njenu
+ * sinonim-alternativu, tako da "bez X" negacija (isNegatedInTarget) vrijedi
+ * jednako za obje, a ne samo za izvornu riječ upita.
+ */
+function wordScoreForLiteral(word: string, target: string): number {
   if (isNegatedInTarget(word, target)) return 0;
   if (new RegExp(`(^|\\s)${escapeRegExp(word)}(\\s|$)`).test(target)) return 2;
   const prefixLength = Math.min(word.length, Math.max(4, Math.ceil(word.length * 0.7)));

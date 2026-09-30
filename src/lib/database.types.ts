@@ -14,6 +14,113 @@ export type Database = {
   }
   public: {
     Tables: {
+      profiles: {
+        Row: {
+          id: string
+          is_premium: boolean
+          onboarding_completed: boolean
+          created_at: string
+        }
+        Insert: {
+          id: string
+          is_premium?: boolean
+          onboarding_completed?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          is_premium?: boolean
+          onboarding_completed?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      user_stores: {
+        Row: {
+          user_id: string
+          store_key: string
+          enabled: boolean
+          created_at: string
+        }
+        Insert: {
+          user_id: string
+          store_key: string
+          enabled?: boolean
+          created_at?: string
+        }
+        Update: {
+          user_id?: string
+          store_key?: string
+          enabled?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      shopping_lists: {
+        Row: {
+          id: string
+          user_id: string
+          status: string
+          created_at: string
+          archived_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          status?: string
+          created_at?: string
+          archived_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          status?: string
+          created_at?: string
+          archived_at?: string | null
+        }
+        Relationships: []
+      }
+      shopping_list_items: {
+        Row: {
+          id: string
+          list_id: string
+          item_key: string
+          name: string
+          quantity: number
+          unit: string
+          checked: boolean
+          checked_at: string | null
+        }
+        Insert: {
+          id?: string
+          list_id: string
+          item_key: string
+          name: string
+          quantity: number
+          unit: string
+          checked?: boolean
+          checked_at?: string | null
+        }
+        Update: {
+          id?: string
+          list_id?: string
+          item_key?: string
+          name?: string
+          quantity?: number
+          unit?: string
+          checked?: boolean
+          checked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_list_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       price_fetch_log: {
         Row: {
           error_message: string | null

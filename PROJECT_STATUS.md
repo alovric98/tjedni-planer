@@ -198,3 +198,31 @@ requestu koji prije nije postojao na `/recepti` i `/tjedni-plan` (na
 napominjem kao poznati P2 za buduću optimizaciju ako zatreba).
 
 `tsc --noEmit`, `eslint .` i `vitest run` prolaze čisto (23/23 testova).
+
+**30.9.2026 - performance/SEO/PWA dovršetak preostalog iz brief-a (lokalno
+komitano, NIJE pushano):**
+
+- **Performance (N9 provjera):** `getAllProducts`/`buildProductIndex` se NE
+  pozivaju suvišno - svaki se zove točno jednom po odabranoj trgovini po
+  loadu Košarice (nužno, različit katalog po trgovini). Stvarni suvišan rad
+  bio je u `src/lib/matching.ts`: `wordScoreForLiteral`/`isNegatedInTarget`
+  su gradili nov `RegExp` za svaki (riječ, proizvod) par - do ~15.000 puta
+  po riječi upita po pozivu `matchProductCandidates`. Dodan
+  `Map`-cache po riječi (regex ovisi samo o riječi, ne o target nazivu) -
+  isti rezultat, bez ponovnog parsiranja regexa. Šira arhitekturna
+  optimizacija (SQL-side filtriranje/indeks umjesto linearnog skena
+  cijelog kataloga po sastojku) ostaje otvoren P2, nije napravljena.
+- **SEO:** `metadataBase`, Open Graph (`title/description/url/siteName/
+  locale/type`), Twitter card (`summary`), i `robots: { index:false,
+  follow:false }` dodani u `layout.tsx` - aplikacija je privatan alat bez
+  javnog sadržaja za indeksiranje (audit N20).
+- **PWA:** `public/manifest.webmanifest` (ime, boje iz Zarinih tokena,
+  `display: standalone`, `start_url: /recepti`) + `apple-touch-icon.png`
+  (180×180) i manifest ikone (192/512) generirane iz postojećeg brand marka
+  (ista korpa-ikona kao `AppHeader.tsx` `BrandMark`, na `--accent`
+  pozadini). Bez service workera (namjerno, izvan opsega).
+- **Čišćenje:** uklonjen stari komitani sync-artefakt
+  `src/lib/matching.server-conflict-*.ts` (identičan `matching.ts` osim
+  trivijalne regex-escape razlike, nigdje uvezen) - vjerojatno slučajno
+  komitan u prošloj sesiji.
+- `tsc --noEmit`, `eslint .`, `vitest run` prolaze čisto (23/23 testova).

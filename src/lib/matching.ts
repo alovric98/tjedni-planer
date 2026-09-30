@@ -45,8 +45,18 @@ const NEGATION_WORD = "bez";
  * (npr. "bez laktoze") lažno poništio nepovezanu riječ koja se slučajno
  * pojavljuje negdje drugdje u istom nazivu.
  */
+const negationRegexCache = new Map<string, RegExp>();
+function negationRegex(word: string): RegExp {
+  let re = negationRegexCache.get(word);
+  if (!re) {
+    re = new RegExp(`(^|\\s)${NEGATION_WORD}\\s+${escapeRegExp(word)}(\\s|$)`);
+    negationRegexCache.set(word, re);
+  }
+  return re;
+}
+
 function isNegatedInTarget(word: string, target: string): boolean {
-  return new RegExp(`(^|\\s)${NEGATION_WORD}\\s+${escapeRegExp(word)}(\\s|$)`).test(target);
+  return negationRegex(word).test(target);
 }
 
 /**
@@ -76,9 +86,19 @@ function wordScore(word: string, target: string): number {
  * sinonim-alternativu, tako da "bez X" negacija (isNegatedInTarget) vrijedi
  * jednako za obje, a ne samo za izvornu riječ upita.
  */
+const wordBoundaryRegexCache = new Map<string, RegExp>();
+function wordBoundaryRegex(word: string): RegExp {
+  let re = wordBoundaryRegexCache.get(word);
+  if (!re) {
+    re = new RegExp(`(^|\\s)${escapeRegExp(word)}(\\s|$)`);
+    wordBoundaryRegexCache.set(word, re);
+  }
+  return re;
+}
+
 function wordScoreForLiteral(word: string, target: string): number {
   if (isNegatedInTarget(word, target)) return 0;
-  if (new RegExp(`(^|\\s)${escapeRegExp(word)}(\\s|$)`).test(target)) return 2;
+  if (wordBoundaryRegex(word).test(target)) return 2;
   const prefixLength = Math.min(word.length, Math.max(4, Math.ceil(word.length * 0.7)));
   return target.includes(word.slice(0, prefixLength)) ? 1 : 0;
 }

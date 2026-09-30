@@ -11,7 +11,7 @@ const UNITS = ["g", "kg", "ml", "l", "kom"] as const;
 // pa ih dodajemo eksplicitno na svakom pozivu umjesto da se oslanjamo na
 // redoslijed u className stringu.
 const fieldClass =
-  "rounded-xl border-0 bg-gray-100 py-3 text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand";
+  "rounded-xl border-0 bg-surface-2 py-3 text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-accent";
 
 type IngredientRow = { key: string; name: string; quantity: string; unit: string };
 
@@ -45,13 +45,16 @@ export function RecipeForm({ mode, recipe }: RecipeFormProps) {
         }))
       : [makeEmptyRow()]
   );
+  const [justAddedKey, setJustAddedKey] = useState<string | null>(null);
 
   function updateRow(key: string, patch: Partial<IngredientRow>) {
     setRows((rows) => rows.map((r) => (r.key === key ? { ...r, ...patch } : r)));
   }
 
   function addRow() {
-    setRows((rows) => [...rows, makeEmptyRow()]);
+    const row = makeEmptyRow();
+    setRows((rows) => [...rows, row]);
+    setJustAddedKey(row.key);
   }
 
   function removeRow(key: string) {
@@ -79,12 +82,13 @@ export function RecipeForm({ mode, recipe }: RecipeFormProps) {
         <span className="block text-sm font-semibold text-ink">Sastojci</span>
         <div className="mt-2 space-y-3">
           {rows.map((row) => (
-            <div key={row.key} className="rounded-xl bg-gray-50 p-2.5 sm:flex sm:items-center sm:gap-2 sm:bg-transparent sm:p-0">
+            <div key={row.key} className="rounded-xl bg-surface-2 p-2.5 sm:flex sm:items-center sm:gap-2 sm:bg-transparent sm:p-0">
               <input
                 name="ingredient_name"
                 type="text"
                 placeholder="Naziv sastojka"
                 value={row.name}
+                autoFocus={row.key === justAddedKey}
                 onChange={(e) => updateRow(row.key, { name: e.target.value })}
                 className={`w-full min-w-0 px-4 sm:flex-1 ${fieldClass}`}
               />
@@ -114,7 +118,7 @@ export function RecipeForm({ mode, recipe }: RecipeFormProps) {
                 <button
                   type="button"
                   onClick={() => removeRow(row.key)}
-                  className="shrink-0 px-1 text-ink-muted hover:text-accent-red-ink"
+                  className="flex min-h-12 w-9 shrink-0 items-center justify-center text-ink-muted hover:text-warn"
                   aria-label="Makni sastojak"
                 >
                   ✕
@@ -128,12 +132,12 @@ export function RecipeForm({ mode, recipe }: RecipeFormProps) {
         </button>
       </div>
 
-      {state.error && <p className="text-sm text-accent-red-ink">{state.error}</p>}
+      {state.error && <p className="text-sm text-warn">{state.error}</p>}
 
       <button
         type="submit"
         disabled={pending}
-        className="rounded-full bg-brand-dark px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+        className="rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-accent-hover disabled:opacity-50"
       >
         {mode === "create" ? "Spremi recept" : "Spremi izmjene"}
       </button>

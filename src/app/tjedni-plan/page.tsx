@@ -33,7 +33,7 @@ export default async function TjedniPlanPage() {
     return (
       <div>
         <h1 className="text-2xl font-semibold text-ink">Tjedni plan</h1>
-        <p className="mt-2 text-accent-red-ink">
+        <p className="mt-2 text-warn">
           Greška kod dohvata podataka: {daysError?.message ?? recipesError?.message}
         </p>
       </div>

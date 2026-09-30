@@ -76,7 +76,7 @@ export async function createRecipe(
   }
 
   revalidatePath("/recepti");
-  redirect("/recepti");
+  redirect("/recepti?toast=recipe_created");
 }
 
 export async function updateRecipe(
@@ -123,7 +123,7 @@ export async function updateRecipe(
   }
 
   revalidatePath("/recepti");
-  redirect("/recepti");
+  redirect("/recepti?toast=recipe_updated");
 }
 
 export async function deleteRecipe(id: string) {

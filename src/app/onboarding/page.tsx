@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { STORE_OPTIONS } from "@/config/store-options";
 import { StoreOnboardingForm } from "./StoreOnboardingForm";
-import { LogoutButton } from "./LogoutButton";
 import { saveStoreSelection } from "./actions";
 
 export const metadata: Metadata = { title: "Odaberi trgovine" };
@@ -40,16 +39,12 @@ export default async function OnboardingPage({
       </p>
 
       {error && (
-        <p className="mt-4 text-sm text-warn">
+        <p className="mt-4 rounded-lg bg-warn-bg px-3 py-2 text-sm text-warn">
           {error === "empty" ? "Odaberi barem jednu trgovinu." : "Nešto je pošlo po zlu, pokušaj ponovno."}
         </p>
       )}
 
       <StoreOnboardingForm options={STORE_OPTIONS} initialSelected={selectedKeys} action={saveStoreSelection} />
-
-      <div className="mt-6 text-center">
-        <LogoutButton />
-      </div>
     </div>
   );
 }

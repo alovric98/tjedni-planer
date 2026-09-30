@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { formatQuantity } from "@/lib/format";
+import { showToast } from "@/components/Toast";
 import {
   getActiveList,
   getArchivedLists,
@@ -123,7 +124,6 @@ export function ShoppingListGenerator() {
   const [activeList, setActiveList] = useState<PersistedList | null | undefined>(undefined);
   const [archivedLists, setArchivedLists] = useState<PersistedList[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
   const [pendingItemId, setPendingItemId] = useState<string | null>(null);
   const [isGenerating, startGenerating] = useTransition();
 
@@ -135,12 +135,6 @@ export function ShoppingListGenerator() {
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Greška kod učitavanja popisa."));
   }, []);
-
-  useEffect(() => {
-    if (!toast) return;
-    const timer = setTimeout(() => setToast(null), 5000);
-    return () => clearTimeout(timer);
-  }, [toast]);
 
   function handleGenerate() {
     setError(null);
@@ -174,7 +168,7 @@ export function ShoppingListGenerator() {
         setArchivedLists(freshArchived);
       }
       if (result.prunedOld) {
-        setToast("Stara lista je automatski uklonjena.");
+        showToast("Stara lista je automatski uklonjena.");
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Greška kod spremanja.");
@@ -189,12 +183,12 @@ export function ShoppingListGenerator() {
   const isLoading = activeList === undefined;
 
   return (
-    <div>
+    <div className="border-t border-border pt-6">
       <button
         type="button"
         disabled={isGenerating}
         onClick={handleGenerate}
-        className="rounded-full bg-brand-dark px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+        className="w-full rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-accent-hover disabled:opacity-50 sm:w-auto"
       >
         {isGenerating ? "Generiram…" : activeList ? "Ponovno generiraj popis" : "Generiraj popis za kupovinu"}
       </button>
@@ -230,12 +224,6 @@ export function ShoppingListGenerator() {
               <ArchivedListCard key={list.id} list={list} />
             ))}
           </div>
-        </div>
-      )}
-
-      {toast && (
-        <div className="fixed inset-x-4 bottom-24 z-40 rounded-xl border border-border bg-surface-1 px-4 py-3 text-center text-sm font-semibold text-ink shadow-[0_-2px_12px_rgba(27,36,32,0.10)] sm:inset-x-auto sm:left-1/2 sm:bottom-6 sm:w-auto sm:-translate-x-1/2">
-          {toast}
         </div>
       )}
     </div>

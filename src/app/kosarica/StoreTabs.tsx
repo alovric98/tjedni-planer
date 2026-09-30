@@ -67,7 +67,7 @@ function PartPurchaseLine({ part }: { part: PartPriceResult }) {
       <span>Kupuješ: {formatBasisQuantity(purchase.purchaseQuantity, purchase.basis)}</span>
       {purchase.packageSizeAssumed && (
         <span
-          className="text-ink-muted/80"
+          className="text-ink-muted"
           title="Cjenik ne daje veličinu pakiranja za ovaj proizvod - koristi se pretpostavljena standardna veličina."
         >
           · pretpostavljeno pakiranje

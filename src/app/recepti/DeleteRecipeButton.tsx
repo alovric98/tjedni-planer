@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { deleteRecipe } from "./actions";
+import { showToast } from "@/components/Toast";
 
 export function DeleteRecipeButton({ id }: { id: string }) {
   const [isPending, startTransition] = useTransition();
@@ -12,12 +13,16 @@ export function DeleteRecipeButton({ id }: { id: string }) {
       disabled={isPending}
       onClick={() => {
         if (window.confirm("Obrisati ovaj recept?")) {
-          startTransition(() => {
-            deleteRecipe(id);
+          startTransition(async () => {
+            try {
+              await deleteRecipe(id);
+            } catch (e) {
+              showToast(e instanceof Error ? e.message : "Greška kod brisanja recepta.");
+            }
           });
         }
       }}
-      className="text-accent-red-ink disabled:opacity-50"
+      className="flex min-h-12 items-center px-2 text-warn disabled:opacity-50"
     >
       Obriši
     </button>

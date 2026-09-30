@@ -1,7 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { useFormStatus } from "react-dom";
 import type { StoreOption } from "@/config/store-options";
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="mt-4 flex min-h-12 w-full items-center justify-center rounded-xl bg-accent px-6 py-3 text-base font-semibold text-white transition-colors duration-200 hover:bg-accent-hover disabled:opacity-60"
+    >
+      {pending ? "Spremam…" : "Spremi i nastavi"}
+    </button>
+  );
+}
 
 function CheckIcon() {
   return (
@@ -72,12 +86,7 @@ export function StoreOnboardingForm({
         );
       })}
 
-      <button
-        type="submit"
-        className="mt-4 flex min-h-12 w-full items-center justify-center rounded-xl bg-accent px-6 py-3 text-base font-semibold text-white transition-colors duration-200 hover:bg-accent-hover"
-      >
-        Spremi i nastavi
-      </button>
+      <SubmitButton />
     </form>
   );
 }

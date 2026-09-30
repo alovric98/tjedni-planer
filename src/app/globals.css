@@ -3,36 +3,65 @@
 @theme inline {
   --font-sans: var(--font-plex-sans);
 
+  /* Tokeni upućuju na CSS varijable definirane u :root / .dark ispod, tako
+     da promjena class="dark" na <html> odmah promijeni sve boje bez
+     ijednog dark: prefiksa po komponenti. */
+  --color-bg: var(--bg);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-warn: var(--warn);
+  --color-warn-bg: var(--warn-bg);
+}
+
+:root {
   /* Dizajn-direkcija (Zara, design/direction.md): topla papirnata baza +
      bosiljak-zeleni accent. Accent je REZERVIRAN za CTA/aktivna stanja i
      oznaku "jeftinije" - nikad dekorativno. */
-  --color-bg: #f7f6f1;
-  --color-surface-1: #ffffff;
-  --color-surface-2: #edebe1;
-  --color-border: #d6d2c4;
-  --color-ink: #1b2420;
-  --color-ink-muted: #5b6560;
-  --color-accent: #2f6b4f;
-  --color-accent-hover: #234f3b;
+  --bg: #f7f6f1;
+  --surface-1: #ffffff;
+  --surface-2: #edebe1;
+  --border: #d6d2c4;
+  --ink: #1b2420;
+  --ink-muted: #5b6560;
+  --accent: #2f6b4f;
+  --accent-hover: #234f3b;
+  /* accent-fg = accent kad stoji SAM kao tekst/ikona/border izravno na
+     pozadini (bez ispune iza sebe, npr. logo ikona, aktivna kartica dana,
+     spinner). U light modu isti je kao --accent jer kontrast na svijetloj
+     pozadini već zadovoljava; razlikuje se samo u .dark ispod. */
+  --accent-fg: #2f6b4f;
 
   /* Nije dio Zarine palete - funkcionalna dopuna za greške/upozorenja
      (zastarjeli cjenik, "cijena nedostupna") koju paleta ne pokriva. Ista
      suzdržana, "ozbiljna" logika kao ostatak sustava, ne alarmantno crvena. */
-  --color-warn: #9e3c31;
-  --color-warn-bg: #f3e4e1;
+  --warn: #9e3c31;
+  --warn-bg: #f3e4e1;
+}
 
-  /* Zadržano radi postojećih poziva u drugim ekranima (recepti, tjedni
-     plan) dok se cijela aplikacija ne prijeđe na novu paletu - vidi
-     PROJECT_STATUS.md za opseg preostalog posla. */
-  --color-cream: var(--color-bg);
-  --color-brand: var(--color-accent);
-  --color-brand-dark: var(--color-accent);
-  --color-accent-green: var(--color-surface-2);
-  --color-accent-green-ink: var(--color-accent);
-  --color-accent-peach: var(--color-surface-2);
-  --color-accent-peach-ink: var(--color-ink-muted);
-  --color-accent-red: var(--color-warn-bg);
-  --color-accent-red-ink: var(--color-warn);
+.dark {
+  /* Tamna varijanta nije invertirana nego kalibrirana za WCAG AA kontrast:
+     --accent ostaje ista nijansa jer na bijelom tekstu (gumbi, "Jeftinije"
+     oznaka) već daje ~6.3:1; --accent-fg je posvijetljena verzija za
+     mjesta gdje accent stoji izravno na tamnoj pozadini bez ispune (inače
+     bi kontrast pao ispod 3:1). */
+  --bg: #15170f;
+  --surface-1: #1e2118;
+  --surface-2: #262a1e;
+  --border: #3a3f30;
+  --ink: #ededdd;
+  --ink-muted: #9ca394;
+  --accent: #2f6b4f;
+  --accent-hover: #234f3b;
+  --accent-fg: #4fa97e;
+
+  --warn: #e2897a;
+  --warn-bg: #3a211d;
 }
 
 @keyframes basket-fill {

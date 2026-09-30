@@ -173,3 +173,28 @@ Nema formalno definirane "Faze 6" - MVP je funkcionalno gotov. Zadnje
 pushano: performance fix + loading animacija za Košaricu (commit
 `5b6460a`), korisnik treba retestirati na mobitelu. Otvoreno je što god
 korisnik sljedeće zatraži - pitaj, ne pretpostavljaj.
+
+**30.9.2026 - centralizirani design system + app shell (lokalno, NIJE
+pushano):** stari alias tokeni (`--color-cream`, `--color-brand*`,
+`--color-accent-green*`, `--color-accent-peach*`, `--color-accent-red*`)
+uklonjeni iz `globals.css` - sve komponente sad koriste izravno Zarine
+tokene (`bg`, `surface-1/2`, `border`, `ink`, `ink-muted`, `accent`,
+`accent-hover`, `warn`, `warn-bg`). 🛒 emoji u `kosarica/loading.tsx`
+zamijenjen inline SVG ikonom (isti oblik kao brand-mark u headeru i login
+ikona). Popravljen jedan kontrast-fail (`text-ink-muted/80` u
+`StoreTabs.tsx`, padao na ~3.8:1 na bijeloj pozadini).
+
+Dodan `src/components/AppHeader.tsx` (sticky top, vidljiv na sve rute
+osim `/login`) - naziv app-a + account meni (avatar/inicijal, dropdown:
+Profil "uskoro" placeholder, Uredi odabir trgovina → `/onboarding`,
+Odjava → isti `supabase.auth.signOut()` flow kao prije). Uklonjen stari
+`onboarding/LogoutButton.tsx` (bio dupliciran, logout je sad dostupan sa
+svakog ekrana kroz header, ne samo s onboardinga). `layout.tsx` je sad
+async i dohvaća korisnika (`getUser()`) da bi header znao prikazati
+avatar/meni vs. "Prijava" link - dodaje jedan Supabase auth poziv po
+requestu koji prije nije postojao na `/recepti` i `/tjedni-plan` (na
+`/kosarica` se time udvostručio, jer ta stranica već radi svoj
+`getUser()` za filtriranje trgovina - nisam dirao tu logiku, samo
+napominjem kao poznati P2 za buduću optimizaciju ako zatreba).
+
+`tsc --noEmit`, `eslint .` i `vitest run` prolaze čisto (23/23 testova).

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { requireUser } from "@/lib/supabase/server";
 import { RecipeForm } from "../../RecipeForm";
 
 export const metadata: Metadata = { title: "Uredi recept" };
@@ -11,11 +11,13 @@ export default async function UrediReceptPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const { supabase, user } = await requireUser();
 
   const { data: recipe, error } = await supabase
     .from("recipes")
     .select("id, name, recipe_ingredients(name, quantity, unit)")
     .eq("id", id)
+    .eq("user_id", user.id)
     .single();
 
   if (error || !recipe) {

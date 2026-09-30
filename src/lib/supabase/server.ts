@@ -40,3 +40,17 @@ export async function createClient() {
     },
   });
 }
+
+// Zajednički helper za rute/akcije kojima treba prijavljen korisnik -
+// baca ako sesije nema (middleware bi već trebao preusmjeriti na /login
+// prije nego se ovo pozove, ovo je druga linija obrane).
+export async function requireUser() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error("Nisi prijavljen.");
+  }
+  return { supabase, user };
+}

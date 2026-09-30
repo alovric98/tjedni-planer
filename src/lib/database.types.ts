@@ -231,33 +231,42 @@ export type Database = {
           id: string
           name: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
       weekly_plan_days: {
         Row: {
           day_of_week: number
+          id: string
           recipe_id: string | null
+          user_id: string | null
         }
         Insert: {
           day_of_week: number
+          id?: string
           recipe_id?: string | null
+          user_id?: string | null
         }
         Update: {
           day_of_week?: number
+          id?: string
           recipe_id?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {

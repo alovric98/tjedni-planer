@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { requireUser } from "@/lib/supabase/server";
 import { RecipeCard } from "./RecipeCard";
 
 export const metadata: Metadata = { title: "Recepti" };
@@ -10,9 +10,11 @@ export const metadata: Metadata = { title: "Recepti" };
 export const dynamic = "force-dynamic";
 
 export default async function ReceptiPage() {
+  const { supabase, user } = await requireUser();
   const { data: recipes, error } = await supabase
     .from("recipes")
     .select("id, name, recipe_ingredients(name, quantity, unit)")
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
   if (error) {

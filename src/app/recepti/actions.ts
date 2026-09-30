@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { supabase } from "@/lib/supabase";
+import { requireUser } from "@/lib/supabase/server";
 
 const UNITS = ["g", "kg", "ml", "l", "kom"] as const;
 type Unit = (typeof UNITS)[number];
@@ -57,9 +57,11 @@ export async function createRecipe(
     return { error: "Dodaj barem jedan sastojak." };
   }
 
+  const { supabase, user } = await requireUser();
+
   const { data: recipe, error: recipeError } = await supabase
     .from("recipes")
-    .insert({ name })
+    .insert({ name, user_id: user.id })
     .select("id")
     .single();
 
@@ -99,6 +101,8 @@ export async function updateRecipe(
     return { error: "Dodaj barem jedan sastojak." };
   }
 
+  const { supabase } = await requireUser();
+
   const { error: updateError } = await supabase
     .from("recipes")
     .update({ name, updated_at: new Date().toISOString() })
@@ -127,6 +131,7 @@ export async function updateRecipe(
 }
 
 export async function deleteRecipe(id: string) {
+  const { supabase } = await requireUser();
   const { error } = await supabase.from("recipes").delete().eq("id", id);
   if (error) {
     throw new Error(`Greška kod brisanja recepta: ${error.message}`);

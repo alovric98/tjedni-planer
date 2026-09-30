@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { supabase } from "@/lib/supabase";
+import { requireUser } from "@/lib/supabase/server";
 import { normalize } from "@/lib/normalize";
 
 export type ShoppingListItem = {
@@ -11,10 +11,14 @@ export type ShoppingListItem = {
 };
 
 export async function setDayRecipe(dayOfWeek: number, recipeId: string | null) {
+  const { supabase, user } = await requireUser();
+
   const { error } = await supabase
     .from("weekly_plan_days")
-    .update({ recipe_id: recipeId })
-    .eq("day_of_week", dayOfWeek);
+    .upsert(
+      { user_id: user.id, day_of_week: dayOfWeek, recipe_id: recipeId },
+      { onConflict: "user_id,day_of_week" }
+    );
 
   if (error) {
     throw new Error(`Greška kod spremanja odabira: ${error.message}`);
@@ -24,9 +28,12 @@ export async function setDayRecipe(dayOfWeek: number, recipeId: string | null) {
 }
 
 export async function generateShoppingList(): Promise<ShoppingListItem[]> {
+  const { supabase, user } = await requireUser();
+
   const { data, error } = await supabase
     .from("weekly_plan_days")
     .select("recipes(recipe_ingredients(name, quantity, unit))")
+    .eq("user_id", user.id)
     .not("recipe_id", "is", null);
 
   if (error) {

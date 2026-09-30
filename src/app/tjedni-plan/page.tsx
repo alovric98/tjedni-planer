@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { supabase } from "@/lib/supabase";
+import { requireUser } from "@/lib/supabase/server";
 import { DaySelect } from "./DaySelect";
 import { ShoppingListGenerator } from "./ShoppingListGenerator";
 
@@ -20,16 +20,18 @@ const DAY_LABELS = [
 ];
 
 export default async function TjedniPlanPage() {
-  const [{ data: days, error: daysError }, { data: recipes, error: recipesError }] =
+  const { supabase, user } = await requireUser();
+
+  const [{ data: existingDays, error: daysError }, { data: recipes, error: recipesError }] =
     await Promise.all([
       supabase
         .from("weekly_plan_days")
         .select("day_of_week, recipe_id")
-        .order("day_of_week"),
-      supabase.from("recipes").select("id, name").order("name"),
+        .eq("user_id", user.id),
+      supabase.from("recipes").select("id, name").eq("user_id", user.id).order("name"),
     ]);
 
-  if (daysError || recipesError || !days || !recipes) {
+  if (daysError || recipesError || !existingDays || !recipes) {
     return (
       <div>
         <h1 className="text-2xl font-semibold text-ink">Tjedni plan</h1>
@@ -39,6 +41,16 @@ export default async function TjedniPlanPage() {
       </div>
     );
   }
+
+  // Korisnik možda još nema redak za svaki dan (weekly_plan_days se sad
+  // puni per-user tek pri prvom odabiru, umjesto da postoji 7 unaprijed
+  // pripremljenih globalnih redaka) - nedostajući dani se prikazuju kao
+  // prazan odabir.
+  const recipeIdByDay = new Map(existingDays.map((d) => [d.day_of_week, d.recipe_id]));
+  const days = DAY_LABELS.map((_, i) => {
+    const dayOfWeek = i + 1;
+    return { day_of_week: dayOfWeek, recipe_id: recipeIdByDay.get(dayOfWeek) ?? null };
+  });
 
   return (
     <div>

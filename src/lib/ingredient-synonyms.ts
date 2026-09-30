@@ -12,7 +12,13 @@
  * vrijedi zasebno za svaku alternativu. Dodaj novi par samo kad postoji
  * stvaran primjer u receptima ili cjeniku - ne nagađaj parove.
  */
-const SYNONYM_GROUPS: string[][] = [["biber", "papar"]];
+const SYNONYM_GROUPS: string[][] = [
+  ["biber", "papar"],
+  // Lidl katalog ima samo "Cvjetača", Kaufland uz "Cvjetača" i jedan
+  // "KBio.Karfiol" - bez ovoga "karfiol" na Lidlu ne pogađa ništa, a na
+  // Kauflandu samo skupu BIO varijantu (provjereno 30.9.2026).
+  ["karfiol", "cvjetaca"],
+];
 
 const SYNONYM_INDEX: Map<string, string[]> = new Map();
 for (const group of SYNONYM_GROUPS) {

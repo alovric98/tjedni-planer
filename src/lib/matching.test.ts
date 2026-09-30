@@ -61,6 +61,26 @@ describe("matchProductCandidates - prag pouzdanosti + kategorijski filtar (FIX 1
     expect(matchProductCandidates(index, "biber")).toHaveLength(0);
   });
 
+  it("'karfiol' pogađa i 'Cvjetača' i 'KBio.Karfiol' (sinonim rječnik)", () => {
+    const index = buildProductIndex([
+      testProduct({ id: "1", name: "Cvjetača", price: 1.99 }),
+      testProduct({ id: "2", name: "KBio.Karfiol 750g", price: 4.99 }),
+      testProduct({ id: "3", name: "KLC.Salata od cvjetače 530g/300g", price: 2.69 }),
+    ]);
+    const candidates = matchProductCandidates(index, "karfiol");
+    expect(candidates.map((c) => c.product.id).sort()).toEqual(["1", "2"]);
+  });
+
+  it("obrnuti upit 'cvjetača' također pogađa 'KBio.Karfiol', ali ne 'Salatu od cvjetače'", () => {
+    const index = buildProductIndex([
+      testProduct({ id: "1", name: "KLC.Cvjetača 450 g", price: 0.89 }),
+      testProduct({ id: "2", name: "KBio.Karfiol 750g", price: 4.99 }),
+      testProduct({ id: "3", name: "KLC.Salata od cvjetače 530g/300g", price: 2.69 }),
+    ]);
+    const candidates = matchProductCandidates(index, "cvjetača");
+    expect(candidates.map((c) => c.product.id).sort()).toEqual(["1", "2"]);
+  });
+
   it("matchProduct je tanki wrapper - vraća najbolji kandidat ili null", () => {
     const index = buildProductIndex([testProduct({ id: "1", name: "Dukat trajno mlijeko 1L", price: 0.99 })]);
     expect(matchProduct(index, "mlijeko")?.id).toBe("1");

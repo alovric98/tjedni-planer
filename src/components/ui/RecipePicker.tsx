@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { CheckIcon } from "./icons";
 
 export type PickerOption = { value: string; label: string };
 
@@ -8,27 +9,28 @@ type RecipePickerProps = {
   value: string | null;
   options: PickerOption[];
   onChange: (value: string | null) => void;
-  /** Pristupačan naziv popisa, npr. "Recepti za ponedjeljak". Naziv gumba dolazi iz njegovog sadržaja. */
+  /** Accessible name of the list, e.g. "Recipes for Monday". The button takes its name from its content. */
   label: string;
-  /** Naslov bottom sheeta na mobitelu. */
+  /** Title of the bottom sheet on mobile. */
   sheetTitle: string;
-  /** Tekst opcije koja briše odabir; prikazuje se samo dok je nešto odabrano. */
+  /** Label of the option that clears the selection; only shown while something is selected. */
   clearLabel: string;
-  /** Spremanje u tijeku: gumb ostaje fokusabilan (ne gubi fokus), ali se popis ne otvara. */
+  /** Save in progress: the button keeps focus but the list will not open. */
   busy?: boolean;
-  /** Sadržaj gumba (okidača). Stil gumba dolazi iz `triggerClassName`. */
+  /** Trigger button content. Button styling comes from `triggerClassName`. */
   children: ReactNode;
   triggerClassName?: string;
 };
 
 /**
- * Stilizirani zamjenski <select> (listbox obrazac iz WAI-ARIA APG):
- * gumb otvara popis s role="listbox"/"option". Tipkovnica: strelice, Home/End,
- * PageUp/PageDown, Enter/Space, Escape, Tab i typeahead. Na mobitelu se popis
- * prikazuje kao bottom sheet s velikim recima, od `sm` kao popover.
+ * Styled replacement for a native <select> (WAI-ARIA APG listbox pattern):
+ * a button opens a role="listbox" list. Keyboard: arrows, Home/End,
+ * PageUp/PageDown, Enter/Space, Escape, Tab and typeahead (Space extends the
+ * typeahead buffer while it is non-empty). On mobile the list is a bottom
+ * sheet with large rows, from `sm` up it is a popover.
  *
- * NAPOMENA: predak koji koristi transform/filter lomi `fixed` sheet na
- * mobitelu - ne stavljati ih na roditelje ove komponente.
+ * NOTE: an ancestor with transform/filter breaks the `fixed` mobile sheet, so
+ * do not put those on parents of this component.
  */
 export function RecipePicker({
   value,
@@ -43,6 +45,8 @@ export function RecipePicker({
 }: RecipePickerProps) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  // Decided at open time: below `sm` the list is a modal bottom sheet.
+  const [isSheet, setIsSheet] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
@@ -56,6 +60,7 @@ export function RecipePicker({
 
   function openList() {
     setActiveIndex(selectedIndex >= 0 ? selectedIndex : 0);
+    setIsSheet(window.matchMedia("(max-width: 39.99rem)").matches);
     setOpen(true);
   }
 
@@ -71,36 +76,47 @@ export function RecipePicker({
     if (item.value !== value) onChange(item.value);
   }
 
-  // Fokus na popis pri otvaranju (aria-activedescendant upravlja aktivnom opcijom).
+  // Move focus to the list on open (aria-activedescendant tracks the active option).
   useEffect(() => {
     if (open) listRef.current?.focus();
   }, [open]);
 
-  // Aktivna opcija uvijek vidljiva pri kretanju strelicama.
+  // Keep the active option in view while moving with the arrow keys.
   useEffect(() => {
     if (!open) return;
     document.getElementById(`${baseId}-opt-${activeIndex}`)?.scrollIntoView({ block: "nearest" });
   }, [open, activeIndex, baseId]);
 
-  // Klik izvan zatvara popover; na mobitelu backdrop preuzima klik.
+  // Outside click closes the popover (on mobile the backdrop handles it), and
+  // Escape closes even if focus has drifted away from the list.
   useEffect(() => {
     if (!open) return;
     function onPointerDown(e: PointerEvent) {
       if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
     }
+    function onKeyDown(e: globalThis.KeyboardEvent) {
+      if (e.key === "Escape" && !e.defaultPrevented) {
+        setOpen(false);
+        buttonRef.current?.focus();
+      }
+    }
     document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
   }, [open]);
 
-  // Sheet je modalan samo na mobitelu - zaključaj scroll pozadine.
+  // The sheet is modal - lock background scroll while it is open.
   useEffect(() => {
-    if (!open || !window.matchMedia("(max-width: 39.99rem)").matches) return;
+    if (!open || !isSheet) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = previous;
     };
-  }, [open]);
+  }, [open, isSheet]);
 
   useEffect(() => () => window.clearTimeout(typeahead.current.timer), []);
 
@@ -113,6 +129,24 @@ export function RecipePicker({
 
   function onListKeyDown(e: KeyboardEvent<HTMLUListElement>) {
     const last = items.length - 1;
+
+    // Typeahead: letters accumulate for ~600 ms and jump to the first option
+    // with that prefix. Space only counts as a letter once a prefix has started,
+    // otherwise it selects (so multi-word names like "pileća juha" work).
+    const isTypeaheadKey =
+      e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && (e.key !== " " || typeahead.current.text !== "");
+    if (isTypeaheadKey) {
+      e.preventDefault();
+      window.clearTimeout(typeahead.current.timer);
+      typeahead.current.text += e.key.toLocaleLowerCase("hr");
+      typeahead.current.timer = window.setTimeout(() => {
+        typeahead.current.text = "";
+      }, 600);
+      const match = items.findIndex((i) => i.label.toLocaleLowerCase("hr").startsWith(typeahead.current.text));
+      if (match >= 0) setActiveIndex(match);
+      return;
+    }
+
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault();
@@ -152,20 +186,11 @@ export function RecipePicker({
         return;
     }
 
-    // Typeahead: slova se skupljaju ~600 ms, skok na prvu opciju s tim prefiksom.
-    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-      window.clearTimeout(typeahead.current.timer);
-      typeahead.current.text += e.key.toLocaleLowerCase("hr");
-      typeahead.current.timer = window.setTimeout(() => {
-        typeahead.current.text = "";
-      }, 600);
-      const match = items.findIndex((i) => i.label.toLocaleLowerCase("hr").startsWith(typeahead.current.text));
-      if (match >= 0) setActiveIndex(match);
-    }
   }
 
   return (
-    <div ref={containerRef} className={`relative ${open ? "z-20" : ""}`}>
+    // No z-index on mobile: a stacking context here would trap the fixed sheet under the header/nav.
+    <div ref={containerRef} className={`relative ${open ? "sm:z-20" : ""}`}>
       <button
         ref={buttonRef}
         type="button"
@@ -191,6 +216,11 @@ export function RecipePicker({
             className="animate-fade-in fixed inset-0 z-40 bg-ink/40 sm:hidden"
           />
           <div
+            role={isSheet ? "dialog" : undefined}
+            aria-modal={isSheet || undefined}
+            aria-label={isSheet ? sheetTitle : undefined}
+            // Keeps focus on the list when tapping non-focusable parts of the sheet.
+            onMouseDown={(e) => e.preventDefault()}
             className="animate-picker-in fixed inset-x-0 bottom-0 z-50 flex max-h-[78dvh] flex-col rounded-t-surface border border-b-0 border-border-strong bg-surface-1 shadow-overlay sm:absolute sm:inset-x-auto sm:bottom-auto sm:left-0 sm:top-full sm:z-30 sm:mt-1.5 sm:max-h-80 sm:w-full sm:min-w-64 sm:rounded-surface sm:border-b"
           >
             <div className="flex items-center justify-between gap-3 border-b border-border px-4 sm:hidden">
@@ -230,15 +260,7 @@ export function RecipePicker({
                   >
                     <span className="min-w-0">{item.label}</span>
                     {selected && (
-                      <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 shrink-0 text-accent-fg" aria-hidden="true">
-                        <path
-                          d="M3.5 8.5 6.5 11.5 12.5 4.5"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
+                      <CheckIcon className="text-accent-fg" />
                     )}
                   </li>
                 );

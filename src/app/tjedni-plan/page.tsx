@@ -52,7 +52,7 @@ export default async function TjedniPlanPage() {
   const week = getCurrentWeek();
   const days = week.map((day) => {
     const recipeId = recipeIdByDay.get(day.dayOfWeek) ?? null;
-    // Obrisan recept (ili onaj kojeg korisnik ne vidi) tretira se kao prazan dan.
+    // A deleted recipe (or one the user cannot see) is treated as an empty day.
     return { ...day, recipeId: recipeId && recipeIds.has(recipeId) ? recipeId : null };
   });
   const plannedCount = days.filter((d) => d.recipeId !== null).length;

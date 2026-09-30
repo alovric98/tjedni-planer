@@ -4,6 +4,7 @@ import { useEffect, useId, useState, useTransition } from "react";
 import { formatQuantity } from "@/lib/format";
 import { showToast } from "@/components/Toast";
 import { Button } from "@/components/ui/Button";
+import { CheckIcon, ChevronDownIcon } from "@/components/ui/icons";
 import {
   getActiveList,
   getArchivedLists,
@@ -11,22 +12,6 @@ import {
   toggleListItem,
   type PersistedList,
 } from "./list-actions";
-
-function CheckMark({ draw = false }: { draw?: boolean }) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4" aria-hidden="true">
-      <path
-        d="M3.5 8.5 6.5 11.5 12.5 4.5"
-        pathLength={1}
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={draw ? "animate-check-draw" : ""}
-      />
-    </svg>
-  );
-}
 
 /**
  * Popis za kupovinu - trajno spremljen u Supabase po korisniku (prije je
@@ -71,7 +56,7 @@ function ShoppingListRow({
               : "border-border-strong bg-surface-1 group-hover:border-accent"
           }`}
         >
-          {isChecked && <CheckMark draw />}
+          {isChecked && <CheckIcon draw />}
         </span>
         <span
           className={`min-w-0 flex-1 text-heading line-through decoration-1 transition-[color,text-decoration-color] duration-200 ${
@@ -127,16 +112,11 @@ function ArchivedListCard({ list }: { list: PersistedList }) {
             {list.items.length} {pluralStavki(list.items.length)} · dovršeno
           </span>
         </span>
-        <svg
-          viewBox="0 0 16 16"
-          fill="none"
-          className={`h-4 w-4 shrink-0 text-ink-subtle transition-transform duration-200 ease-out ${open ? "rotate-180" : ""}`}
-          aria-hidden="true"
-        >
-          <path d="m4 6.5 4 4 4-4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <ChevronDownIcon
+          className={`text-ink-subtle transition-transform duration-200 ease-out ${open ? "rotate-180" : ""}`}
+        />
       </button>
-      {/* grid-rows 0fr→1fr animira visinu bez mjerenja; `inert` sakriva zatvoreni sadržaj od čitača. */}
+      {/* Animating grid-rows 0fr→1fr gives a height transition without measuring; `inert` hides the closed content from screen readers. */}
       <div
         id={panelId}
         inert={!open}
@@ -154,9 +134,7 @@ function ArchivedListCard({ list }: { list: PersistedList }) {
                 aria-hidden="true"
                 className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent-fg"
               >
-                <span className="scale-[0.8]">
-                  <CheckMark />
-                </span>
+                <CheckIcon className="scale-[0.8]" />
               </span>
               <span className="min-w-0 flex-1 text-label text-ink-muted">{item.name}</span>
               <span className="shrink-0 text-label tabular-nums text-ink-muted">
@@ -209,11 +187,12 @@ export function ShoppingListGenerator() {
 
   function handleGenerate() {
     setError(null);
-    setJustCompleted(false);
     startGenerating(async () => {
       try {
         const list = await regenerateActiveList();
         setActiveList(list);
+        // Only drop the "all bought" card once a new list actually exists.
+        setJustCompleted(false);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Greška kod generiranja popisa.");
       }
@@ -271,6 +250,11 @@ export function ShoppingListGenerator() {
         )}
       </div>
 
+      {/* Live region is always mounted so screen readers announce the text when it appears. */}
+      <div role="status" className="sr-only">
+        {justCompleted && !activeList ? "Sve je kupljeno. Popis je spremljen među prijašnje liste." : ""}
+      </div>
+
       {error && (
         <p
           role="alert"
@@ -299,10 +283,10 @@ export function ShoppingListGenerator() {
         <div className="animate-pop-in mt-3 rounded-surface border border-accent/30 bg-accent-soft px-4 py-5">
           <div className="flex items-start gap-3.5">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-white">
-              <CheckMark draw />
+              <CheckIcon draw />
             </span>
             <div>
-              <p role="status" className="text-heading font-semibold text-ink">
+              <p className="text-heading font-semibold text-ink">
                 Sve je kupljeno
               </p>
               <p className="mt-0.5 text-label text-ink-muted">Popis je spremljen među prijašnje liste.</p>

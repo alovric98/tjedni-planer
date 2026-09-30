@@ -5,11 +5,12 @@ import { setDayRecipe } from "./actions";
 import { showToast } from "@/components/Toast";
 import { Badge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Button";
+import { ChevronDownIcon, PlusIcon } from "@/components/ui/icons";
 import { RecipePicker } from "@/components/ui/RecipePicker";
 
 type DaySelectProps = {
   dayOfWeek: number;
-  /** "Ponedjeljak" - puni naziv, za pristupačnost. */
+  /** Full day name ("Ponedjeljak"), used for accessibility labels. */
   label: string;
   /** "Pon" */
   shortLabel: string;
@@ -18,22 +19,6 @@ type DaySelectProps = {
   selectedRecipeId: string | null;
   recipes: { id: string; name: string }[];
 };
-
-function PlusIcon() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
-      <path d="M8 3.5v9M3.5 8h9" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function ChevronIcon() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 shrink-0 text-ink-subtle" aria-hidden="true">
-      <path d="m4 6.5 4 4 4-4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
 export function DaySelect({
   dayOfWeek,
@@ -48,16 +33,19 @@ export function DaySelect({
   const [value, setValue] = useState(selectedRecipeId);
   const [error, setError] = useState<string | null>(null);
   const [failed, setFailed] = useState<{ next: string | null; previous: string | null } | null>(null);
-  // Povećava se kad korisnik odabere recept - služi kao `key` da se naziv
-  // animira samo nakon odabira, ne pri prvom renderu stranice.
+  // Incremented on every user selection - used as `key` so the name animates
+  // only after a selection, not on the first page render.
   const [changeCount, setChangeCount] = useState(0);
 
-  // Server je izvor istine: nakon revalidacije stranice uskladi lokalni
-  // (optimistični) odabir s onim što je stvarno spremljeno.
+  // The server is the source of truth: after the page revalidates, sync the
+  // local (optimistic) selection with what was actually saved. A changed
+  // server value also invalidates any earlier error/retry for this day.
   const [prevProp, setPrevProp] = useState(selectedRecipeId);
   if (selectedRecipeId !== prevProp) {
     setPrevProp(selectedRecipeId);
     setValue(selectedRecipeId);
+    setError(null);
+    setFailed(null);
   }
 
   const selectedName = recipes.find((r) => r.id === value)?.name ?? null;
@@ -71,7 +59,7 @@ export function DaySelect({
         await setDayRecipe(dayOfWeek, next);
         showToast(next ? "Dodano u tjedni plan." : "Uklonjeno iz tjednog plana.");
       } catch (e) {
-        // Vrati prikaz na zadnje spremljeno stanje i ponudi ponovni pokušaj.
+        // Roll the display back to the last saved state and offer a retry.
         setValue(previous);
         setError(e instanceof Error ? e.message : "Greška kod spremanja.");
         setFailed({ next, previous });
@@ -154,7 +142,7 @@ export function DaySelect({
               </span>
             </span>
           )}
-          {isPending ? <Spinner className="text-ink-muted" /> : <ChevronIcon />}
+          {isPending ? <Spinner className="text-ink-muted" /> : <ChevronDownIcon className="text-ink-subtle" />}
         </RecipePicker>
 
         {error && (

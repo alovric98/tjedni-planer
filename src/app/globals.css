@@ -232,7 +232,7 @@
   }
 }
 
-/* Izbornik: bottom sheet na mobitelu, popover (pop-in) od sm naviše. */
+/* Picker: bottom sheet on mobile, popover (pop-in) from sm up. */
 .animate-picker-in {
   animation: sheet-up 240ms var(--ease-out-quint) both;
 }

@@ -123,6 +123,18 @@ završni pass, ostali ekrani: recepti lista, košarica, ShoppingListGenerator).
    promjene pravila regenerirati fixture - vidi `note` u JSON-u). Nova
    pravila dodavati tek uz stvaran primjer iz recepta i provjeru nad
    katalogom.
+   **Svježe povrće i smrznuto** (30.9.2026): pravila povrća su `fresh` -
+   prvo proizvodi koji nisu smrznuti (naziv smrz./zamrz./Ledo ili marka
+   Freshona/Chira/Ledo), smrznuto tek kad svježeg nema (grašak, špinat,
+   mahune) ili kad recept kaže "smrznuti ..." (zasebna varijanta pravila,
+   ne spaja se sa svježim). Smrznuto se nikad ne računa na vagu. Konzerve i
+   kiselo se izbacuju, BIO se izbacuje osim ako ga recept traži (Lidl ima
+   samo BIO đumbir -> "cijena nedostupna"). Lidl `unit = kom` znači cijenu
+   po KOMADU (cvjetača, salate, krastavac) = pakiranje; Lidl `unit = kg` uz
+   `unit_price = cijena` i `net_quantity < 1` znači cijenu po kg (tikvica).
+   Dio Kauflandovog smrznutog nije ničim označen - hvata ga prednost artikla
+   na vagu; bez vage (npr. KLC brokula 450 g) može proći kao "svježe".
+   Batak je zasebno pravilo (prosjek kao prsa, bez zabatka i purećeg).
 3. **g↔ml aproksimacija gustoće ~1** za tekuće/pasirane namirnice unesene u
    gramima (npr. "pasirana rajčica" 500g → tretira se kao 0.5L ako je
    proizvod cjenovno baziran na litri).

@@ -75,6 +75,15 @@ function PartPurchaseLine({ part }: { part: PartPriceResult }) {
           prosjek {part.averagedCount} varijanti
         </span>
       )}
+      {part.frozen && (
+        <span
+          className="inline-flex items-center gap-1 font-semibold text-ink-muted"
+          title="Svježeg proizvoda nema u trgovini (ili je u receptu traženo smrznuto) - cijena je za smrznuti."
+        >
+          <InfoIcon />
+          smrznuto
+        </span>
+      )}
       {part.estimated && (
         <span
           className="inline-flex items-center gap-1 font-semibold text-ink-muted"

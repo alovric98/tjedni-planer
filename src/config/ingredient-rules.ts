@@ -1,4 +1,4 @@
-import { normalize } from "@/lib/normalize";
+import { normalize, splitFrozenRequest } from "@/lib/normalize";
 import type { PricingRule } from "@/lib/pricing";
 
 /**
@@ -21,7 +21,65 @@ import type { PricingRule } from "@/lib/pricing";
  * stvarni primjer iz recepta i provjeru nad katalogom (vidi
  * ingredient-rules.test.ts).
  */
+// Što svježe povrće NIJE: konzerve, kiseljenje, prerađevine, BIO (izbačen
+// osim ako ga recept izričito traži - vidi odluku u PROJECT_STATUS.md).
+const NOT_FRESH =
+  "bio|kbio|konzerv|sterilizir|rasol|staklen|om \\d|kisel|ukis|u octu|juha|krem|umak|pire|pasta|ajvar|susen|prah|cips|chips|snack|pizza|kolac|kasica|bebe|salata od|mljev|zacin|caj|sirup|kandir|marin|pecen|grill|prz|punjen|namaz";
+
+/**
+ * Svježe povrće: u Kauflandu (i dijelom Lidlu) prodaje se na vagu, pa je
+ * `looseOk`; bira se najjeftiniji proizvod; smrznuto samo ako svježeg nema
+ * ili ga recept traži (`fresh`). `extraExclude` dodaje izuzetke po sastojku.
+ */
+function freshVegetable(rule: {
+  key: string;
+  label: string;
+  aliases: string[];
+  include: RegExp;
+  extraExclude?: string;
+}): PricingRule {
+  return {
+    key: rule.key,
+    label: rule.label,
+    aliases: rule.aliases,
+    include: rule.include,
+    exclude: new RegExp(`\\b(${NOT_FRESH}${rule.extraExclude ? `|${rule.extraExclude}` : ""})`),
+    mode: "cheapest",
+    looseOk: true,
+    fresh: true,
+  };
+}
+
 export const INGREDIENT_RULES: PricingRule[] = [
+
+  // --- svježe povrće -------------------------------------------------------
+  freshVegetable({ key: "cvjetaca", label: "Cvjetača", aliases: ["cvjetaca", "karfiol"], include: /(^| )(cvjetaca|karfiol)( |$)/, extraExclude: "pan|pohan" }),
+  freshVegetable({ key: "luk", label: "Luk", aliases: ["luk", "crveni luk", "luk crveni"], include: /^(klc |kbio )?luk( |$)/, extraExclude: "mlad|kruton|kolutic|krekeri|vezica|srebrenac|ljutika|shallot|rukavac" }),
+  freshVegetable({ key: "mrkva", label: "Mrkva", aliases: ["mrkva"], include: /^(klc |kbio )?mrkva( |$)/, extraExclude: "julienne|baby|kas|mlada|zuta|torta|rezan|ribana|kuhana" }),
+  freshVegetable({ key: "persin", label: "Peršin", aliases: ["persin", "persina"], include: /^(klc )?persin( |$)/, extraExclude: "sjemen|sol" }),
+  freshVegetable({ key: "sampinjoni", label: "Šampinjoni", aliases: ["sampinjoni", "sampinjon"], include: /(^| )sampinjon/, extraExclude: "salata|3 klasa|freshona|mix|portabella|baguette|ragu|tartuf|podravka" }),
+  freshVegetable({ key: "krumpir", label: "Krumpir", aliases: ["krumpir", "krumpiri"], include: /^(klc |kbio )?krumpir( |$)/, extraExclude: "batat|salata|stapic|mrezast|pekarsk|krumpirici|pire|slatk" }),
+  freshVegetable({ key: "batat", label: "Batat", aliases: ["batat", "slatki krumpir"], include: /(^| )batat( |$)/ }),
+  freshVegetable({ key: "celer", label: "Celer", aliases: ["celer", "celer korijen"], include: /^(klc )?celer( |$)/, extraExclude: "salata" }),
+  freshVegetable({ key: "cikla", label: "Cikla", aliases: ["cikla", "repa cikla"], include: /(^| )cikla( |$)/, extraExclude: "kuhana|kockica|kriska|multipack" }),
+  freshVegetable({ key: "kelj", label: "Kelj", aliases: ["kelj"], include: /^kelj( |$)/, extraExclude: "pupcar" }),
+  freshVegetable({ key: "kupus", label: "Kupus", aliases: ["kupus", "bijeli kupus", "kupus bijeli"], include: /^(klc )?kupus( bijeli)?( |$)/, extraExclude: "crven|kineski|salata|slatk|rezan|glavica" }),
+  freshVegetable({ key: "crveni-kupus", label: "Crveni kupus", aliases: ["crveni kupus", "kupus crveni"], include: /kupus crveni|crveni kupus/, extraExclude: "salata|slatk|rezan|glavica" }),
+  freshVegetable({ key: "brokula", label: "Brokula", aliases: ["brokula", "brokoli"], include: /(^| )(brokula|brokoli)( |$)/, extraExclude: "brokulini" }),
+  freshVegetable({ key: "tikvica", label: "Tikvica", aliases: ["tikvica", "tikvice"], include: /(^| )tikvic/, extraExclude: "salata" }),
+  freshVegetable({ key: "patlidzan", label: "Patlidžan", aliases: ["patlidzan", "patlidzani"], include: /(^| )patlidzan/ }),
+  freshVegetable({ key: "paprika", label: "Paprika", aliases: ["paprika", "paprike"], include: /^(klc )?paprika( |$)/, extraExclude: "ljut|slatk|sal|mix|rotunda|mini|salam" }),
+  freshVegetable({ key: "ljuta-paprika", label: "Ljuta paprika", aliases: ["ljuta paprika", "paprika ljuta", "chili", "čili"], include: /paprika ljut|ljut.*paprika|^(klc )?chili( |$)/, extraExclude: "mix|sal" }),
+  freshVegetable({ key: "rajcica", label: "Rajčica", aliases: ["rajcica", "rajcice", "paradajz"], include: /^(klc )?rajcica( |$)/, extraExclude: "pasirana|sok|pelat|juice|kecap|koncentr|ulju|konz|salata|mini|cherry|koktel|snack" }),
+  freshVegetable({ key: "krastavac", label: "Krastavac", aliases: ["krastavac", "krastavci"], include: /(^| )krastav/, extraExclude: "kornis|kiselj|mini|snack|salata|slatko" }),
+  freshVegetable({ key: "poriluk", label: "Poriluk", aliases: ["poriluk"], include: /(^| )poriluk/ }),
+  freshVegetable({ key: "radic", label: "Radič", aliases: ["radic", "radić"], include: /(^| )radic/ }),
+  freshVegetable({ key: "dumbir", label: "Đumbir", aliases: ["dumbir", "đumbir"], include: /^(klc )?dumbir/, extraExclude: "sok|kis|sushi" }),
+  freshVegetable({ key: "cesnjak", label: "Češnjak", aliases: ["cesnjak", "bijeli luk", "cesnjak domaci"], include: /^(klc )?cesnjak/, extraExclude: "granul|u prahu|sjecka|bocic|pasta|ulje" }),
+  freshVegetable({ key: "spinat", label: "Špinat", aliases: ["spinat"], include: /^(klc )?spinat/, extraExclude: "jastucic|pita|sir" }),
+  freshVegetable({ key: "mahune", label: "Mahune", aliases: ["mahune", "zelene mahune"], include: /^(klc )?(zelene |zute |mlade )?mahun/, extraExclude: "xxl|salata|mahunark|edamame" }),
+  freshVegetable({ key: "salata", label: "Zelena salata", aliases: ["zelena salata", "salata"], include: /^salata (iceberg|hrastov|kristal|puterica|regica|srcika|s korijenom|zelena|glavata|rukola)|^zelena salata/ }),
+  freshVegetable({ key: "grasak", label: "Grašak", aliases: ["grasak"], include: /(^| )grasak( |$)/, extraExclude: "tuna|mrkv|mjesav|wasabi|riza|piletin|tjest|salat" }),
   {
     key: "papar",
     label: "Papar",
@@ -32,33 +90,6 @@ export const INGREDIENT_RULES: PricingRule[] = [
     looseOk: false,
   },
   {
-    key: "cvjetaca",
-    label: "Cvjetača",
-    aliases: ["cvjetaca", "karfiol"],
-    include: /(^| )(cvjetaca|karfiol)( |$)/,
-    exclude: /\b(bio|kbio|smrzn|salata|juha|mix|krem|pan|pohan|umak)/,
-    mode: "cheapest",
-    looseOk: true,
-  },
-  {
-    key: "grasak",
-    label: "Grašak",
-    aliases: ["grasak"],
-    include: /(^| )grasak( |$)/,
-    exclude: /\b(tuna|mrkv|bio|mjesav|juha|pire|wasabi|cips|snack|kasica|bebe|riza|piletin|tjest|salat)/,
-    mode: "cheapest",
-    looseOk: false,
-  },
-  {
-    key: "luk",
-    label: "Luk",
-    aliases: ["luk", "crveni luk", "luk crveni"],
-    include: /^(klc |kbio )?luk( |$)/,
-    exclude: /\b(mlad|kruton|kolutic|prah|krekeri|snack|przen|bio|cesnj|vezica|srebrenac)/,
-    mode: "cheapest",
-    looseOk: true,
-  },
-  {
     key: "maslinovo-ulje",
     label: "Maslinovo ulje",
     aliases: ["maslinovo ulje", "ulje maslinovo"],
@@ -66,24 +97,6 @@ export const INGREDIENT_RULES: PricingRule[] = [
     exclude: /\b(sprej|spray|bio|kbio|tartuf|limun|cesnj|aroma|nadjev|masline|pest|ocat|salat|okus|za )/,
     mode: "cheapest",
     looseOk: false,
-  },
-  {
-    key: "mrkva",
-    label: "Mrkva",
-    aliases: ["mrkva"],
-    include: /^(klc |kbio )?mrkva( |$)/,
-    exclude: /\b(bio|julienne|baby|kas|mlada|zuta|torta|kolac|sok|rezan|ribana|konz)/,
-    mode: "cheapest",
-    looseOk: true,
-  },
-  {
-    key: "persin",
-    label: "Peršin",
-    aliases: ["persin"],
-    include: /^(klc )?persin( |$)/,
-    exclude: /\b(bio|sjemen|sol|zacin|susen)/,
-    mode: "cheapest",
-    looseOk: true,
   },
   {
     // "Piletina" u receptima = prsa. Svježa prsa se prodaju na vagu u više
@@ -99,6 +112,18 @@ export const INGREDIENT_RULES: PricingRule[] = [
     looseOk: true,
   },
   {
+    // Batak je zasebni sastojak (zabatak, pureći i "batak + zabatak" ne ulaze).
+    // Svježi batak se prodaje na vagu; kao i prsa, cijena je prosjek varijanti.
+    key: "pileci-batak",
+    label: "Pileći batak",
+    aliases: ["pileci batak", "batak"],
+    include: /(^| )batak( |$)/,
+    exclude:
+      /\b(zabat|pureci|otkost|panir|pohan|smrz|dimlj|marin|kids|ovitk|mini|kebab|bio|pecen|zacin)|( i zab)|( sa zab)/,
+    mode: "average",
+    looseOk: true,
+  },
+  {
     key: "riza",
     label: "Riža",
     aliases: ["riza"],
@@ -107,15 +132,6 @@ export const INGREDIENT_RULES: PricingRule[] = [
       /\b(sushi|bio|rizin|napitak|biljn|snack|mlijek|sladoled|pudding|kolac|instant|integral|risotto|jasmin|thai|kuhan|salat|rizot|slatk|mix|povrc|basmati|arborio|divlj|crn|crven|cips|keks|torta|kasa|jabuk|cokol|konjak|ekstrud|kakao|gyros|bebivita|carnaroli|cjelovit|smed|vrste)/,
     mode: "cheapest",
     looseOk: false,
-  },
-  {
-    key: "sampinjoni",
-    label: "Šampinjoni",
-    aliases: ["sampinjoni", "sampinjon"],
-    include: /(^| )sampinjon/,
-    exclude: /\b(bio|konz|salat|juha|umak|krem|marin|zamrz|smrz|pohan|pan|kisel|ulje|pasteta|pizza|klasa|freshona)/,
-    mode: "cheapest",
-    looseOk: true,
   },
   {
     // Samo obična kuhinjska sol (sitna/krupna/tuzlanska) - ne mlinac, dozator,
@@ -150,7 +166,22 @@ for (const rule of INGREDIENT_RULES) {
   }
 }
 
-/** Pravilo za sastojak iz recepta (po normaliziranom nazivu/sinonimu) ili undefined -> generičko uparivanje. */
+const FROZEN_VARIANTS = new Map<string, PricingRule>();
+
+/**
+ * Pravilo za sastojak iz recepta (po normaliziranom nazivu/sinonimu) ili
+ * undefined -> generičko uparivanje. Recept koji izričito traži smrznuto
+ * ("smrznuti grašak") dobiva zasebnu varijantu pravila, pa se ne spaja sa
+ * svježim istog sastojka.
+ */
 export function findIngredientRule(ingredientName: string): PricingRule | undefined {
-  return RULE_BY_ALIAS.get(normalizeIngredientName(ingredientName));
+  const { cleaned, frozen } = splitFrozenRequest(ingredientName);
+  const rule = RULE_BY_ALIAS.get(normalizeIngredientName(cleaned));
+  if (!rule || !frozen) return rule;
+  let variant = FROZEN_VARIANTS.get(rule.key);
+  if (!variant) {
+    variant = { ...rule, key: `${rule.key}-frozen`, label: `${rule.label} smrznuto`, requireFrozen: true };
+    FROZEN_VARIANTS.set(rule.key, variant);
+  }
+  return variant;
 }

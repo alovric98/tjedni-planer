@@ -197,6 +197,66 @@ describe("priceIngredientPart - na vagu (rinfuza)", () => {
   });
 });
 
+describe("priceIngredientPart - Lidl unit_price i smrznuto", () => {
+  const veg = rule({ include: /tikvic|grasak/, looseOk: true, fresh: true });
+
+  it("unit = kg s unit_price = cijena i net_quantity < 1 je cijena po kg, ne pakiranje od 300 g", () => {
+    const index = buildProductIndex([product("Tikvica", 1.69, 0.3, { unit: "kg", unit_price: 1.69 })]);
+    const r = priceIngredientPart(index, "tikvica", 500, "g", veg);
+    expect(r.purchase).toMatchObject({ soldByWeight: true, pricePerKg: 1.69 });
+    expect(r.itemPrice).toBe(0.85);
+  });
+
+  it("unit = kom (cijena po komadu, npr. cvjetača ~914 g) ostaje cijelo pakiranje", () => {
+    const index = buildProductIndex([product("Cvjetača", 1.99, 0.914, { unit: "kom", unit_price: 1.99 })]);
+    const r = priceIngredientPart(index, "cvjetača", 250, "g", rule({ include: /cvjetaca/, looseOk: true }));
+    expect(r.purchase).toMatchObject({ soldByWeight: false, packCount: 1, packSize: 0.914 });
+    expect(r.itemPrice).toBe(1.99);
+  });
+
+  it("unit_price = cijena ne čini na vagu proizvod za sastojak bez looseOk (Lidl papar 14 g ima pogrešan unit_price)", () => {
+    const index = buildProductIndex([product("Crni papar u zrnu", 0.37, 0.014, { unit: "kg", unit_price: 0.37 })]);
+    const r = priceIngredientPart(index, "papar", 5, "g", rule({ include: /papar/ }));
+    expect(r.purchase).toMatchObject({ soldByWeight: false, packCount: 1 });
+    expect(r.itemPrice).toBe(0.37);
+  });
+
+  it("svježe ima prednost pred jeftinijim smrznutim", () => {
+    const index = buildProductIndex([
+      product("Tikvica", 1.69, 1),
+      product("Tikvica smrznuta", 0.5, 0.45),
+    ]);
+    const r = priceIngredientPart(index, "tikvica", 450, "g", veg);
+    expect(r.frozen).toBe(false);
+    expect(r.matchedName).toBe("Tikvica");
+  });
+
+  it("bez svježeg pada na smrznuto, i to kao pakiranje (ne na vagu)", () => {
+    const index = buildProductIndex([
+      product("Grašak, smrznuto", 1.99, 1, { brand: "Freshona", unit: "kg", unit_price: 1.99 }),
+      product("Grašak, smrznuti", 1.19, 0.45, { brand: "Freshona" }),
+    ]);
+    const r = priceIngredientPart(index, "grašak", 200, "g", veg);
+    expect(r.frozen).toBe(true);
+    expect(r.purchase).toMatchObject({ soldByWeight: false, packCount: 1, packSize: 0.45 });
+    expect(r.itemPrice).toBe(1.19);
+  });
+
+  it("recept 'smrznuti grašak' koristi samo smrznute čak i kad postoji svježe", () => {
+    const index = buildProductIndex([product("Grašak svježi", 0.9, 0.5), product("Grašak, smrznuti", 1.19, 0.45)]);
+    const r = priceIngredientPart(index, "smrznuti grašak", 200, "g", veg);
+    expect(r.frozen).toBe(true);
+    expect(r.matchedName).toBe("Grašak, smrznuti");
+  });
+
+  it("generičko uparivanje (bez pravila) također preferira svježe i pada na smrznuto", () => {
+    const index = buildProductIndex([product("Brokula 450 g", 1.59, 0.45), product("Brokula smrznuta 450 g", 0.9, 0.45)]);
+    const r = priceIngredientPart(index, "brokula", 300, "g");
+    expect(r.frozen).toBe(false);
+    expect(r.itemPrice).toBe(1.59);
+  });
+});
+
 describe("priceIngredientPart - generičko uparivanje (bez pravila) je označeno kao procjena", () => {
   it("ne miješa prerađevine u cijenu sirovine (luk vs. krekeri s okusom luka)", () => {
     const index = buildProductIndex([

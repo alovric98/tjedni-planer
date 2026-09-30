@@ -4,6 +4,42 @@
  "note": "Subset of the real price list: only food/drink products matching an ingredient-rules include pattern (before exclude). Regenerate when rules change.",
  "products": [
   {
+   "name": "KLC.Krastavci.1550g/850g",
+   "brand": "K-Classic",
+   "price": 3.99,
+   "unit": "kg",
+   "unit_price": 4.694,
+   "net_quantity": 1.55,
+   "category": "HRANA"
+  },
+  {
+   "name": "Češnjak domaći 200g",
+   "brand": "Češnjak",
+   "price": 1.99,
+   "unit": "kg",
+   "unit_price": 9.95,
+   "net_quantity": 0.2,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Rajčica juice 100% 1 l brick",
+   "brand": "K-Classic",
+   "price": 1.49,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "PIĆE"
+  },
+  {
+   "name": "Paprika grill 200 g",
+   "brand": "Paprika grill",
+   "price": 1.29,
+   "unit": "kg",
+   "unit_price": 6.45,
+   "net_quantity": 0.2,
+   "category": "HRANA"
+  },
+  {
    "name": "KLC.Fix instant umak od šampinjona 38 g",
    "brand": "K-Classic",
    "price": 0.44,
@@ -31,11 +67,47 @@
    "category": "HRANA"
   },
   {
+   "name": "Špinat 500 g",
+   "brand": null,
+   "price": 1.99,
+   "unit": "kg",
+   "unit_price": 3.98,
+   "net_quantity": 0.5,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.slatki crveni kupus 680g/650g",
+   "brand": "K- Classic",
+   "price": 1.89,
+   "unit": "kg",
+   "unit_price": 2.908,
+   "net_quantity": 0.68,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Cikla crvena u kockicama 670g/430g",
+   "brand": "K-Classic",
+   "price": 1.39,
+   "unit": "kg",
+   "unit_price": 3.233,
+   "net_quantity": 0.67,
+   "category": "HRANA"
+  },
+  {
    "name": "Mrkva žuta 500 g",
    "brand": "Mrkva žuta",
    "price": 0.99,
    "unit": "kg",
    "unit_price": 1.98,
+   "net_quantity": 0.5,
+   "category": "HRANA"
+  },
+  {
+   "name": "Celer list",
+   "brand": "#",
+   "price": 1.29,
+   "unit": "kg",
+   "unit_price": 2.58,
    "net_quantity": 0.5,
    "category": "HRANA"
   },
@@ -46,6 +118,15 @@
    "unit": "kg",
    "unit_price": 21.9,
    "net_quantity": 0.1,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Zelene mahune 425ml/225g",
+   "brand": "K- Classic",
+   "price": 1.89,
+   "unit": "kg",
+   "unit_price": 8.4,
+   "net_quantity": 0.4,
    "category": "HRANA"
   },
   {
@@ -73,6 +154,24 @@
    "unit": "kg",
    "unit_price": 3.98,
    "net_quantity": 0.5,
+   "category": "HRANA"
+  },
+  {
+   "name": "Rajčica mini roma 250 g",
+   "brand": "Rajčica mini roma",
+   "price": 1.39,
+   "unit": "kg",
+   "unit_price": 5.56,
+   "net_quantity": 0.25,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Krastavci kiseli 670g/360g_OC",
+   "brand": "K-Classic",
+   "price": 1.48,
+   "unit": "kg",
+   "unit_price": 4.111,
+   "net_quantity": 0.67,
    "category": "HRANA"
   },
   {
@@ -112,6 +211,15 @@
    "category": "HRANA"
   },
   {
+   "name": "Podravka Krastavci kiseli klas.660g/330g",
+   "brand": "Podravka",
+   "price": 2.69,
+   "unit": "kg",
+   "unit_price": 8.152,
+   "net_quantity": 0.66,
+   "category": "HRANA"
+  },
+  {
    "name": "Vegeta pikant 100 g",
    "brand": "Vegeta",
    "price": 1.49,
@@ -130,6 +238,24 @@
    "category": "HRANA"
   },
   {
+   "name": "Paprika mini snack 200 g",
+   "brand": "Paprika",
+   "price": 1.49,
+   "unit": "kg",
+   "unit_price": 7.45,
+   "net_quantity": 0.2,
+   "category": "HRANA"
+  },
+  {
+   "name": "Krastavac mini snack 250 g",
+   "brand": "Krastavac mini",
+   "price": 1.49,
+   "unit": "kg",
+   "unit_price": 5.96,
+   "net_quantity": 0.25,
+   "category": "HRANA"
+  },
+  {
    "name": "Podravka krem juha od šampinjona 63 g",
    "brand": "Podravka",
    "price": 1.39,
@@ -145,6 +271,15 @@
    "unit": "l",
    "unit_price": 38.76,
    "net_quantity": 0.25,
+   "category": "HRANA"
+  },
+  {
+   "name": "Rajčica pelat",
+   "brand": "#",
+   "price": 1.99,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
    "category": "HRANA"
   },
   {
@@ -189,6 +324,15 @@
    "price": 3.49,
    "unit": "kg",
    "unit_price": 6.98,
+   "net_quantity": 0.5,
+   "category": "HRANA"
+  },
+  {
+   "name": "Cikla kuhana 500g",
+   "brand": "Cikla",
+   "price": 1.99,
+   "unit": "kg",
+   "unit_price": 3.98,
    "net_quantity": 0.5,
    "category": "HRANA"
   },
@@ -247,12 +391,48 @@
    "category": "HRANA"
   },
   {
+   "name": "Kupus kiseli mix za sarmu 1kg",
+   "brand": "#",
+   "price": 3.99,
+   "unit": "kg",
+   "unit_price": 3.99,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Pileći batak",
+   "brand": null,
+   "price": 2.29,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
    "name": "Pileći file od prsiju",
    "brand": null,
    "price": 4.99,
    "unit": null,
    "unit_price": null,
    "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "KBio.Tikvica 500g",
+   "brand": "KBio",
+   "price": 2.49,
+   "unit": "kg",
+   "unit_price": 4.98,
+   "net_quantity": 0.5,
+   "category": "HRANA"
+  },
+  {
+   "name": "Derma paprika ljuta začinska 70 g",
+   "brand": "Derma",
+   "price": 1.75,
+   "unit": "kg",
+   "unit_price": 25,
+   "net_quantity": 0.07,
    "category": "HRANA"
   },
   {
@@ -427,6 +607,15 @@
    "category": "HRANA"
   },
   {
+   "name": "Imbiss KLC.Krastavci 1550g/850g",
+   "brand": "K- Classic",
+   "price": 2.52,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1.55,
+   "category": "HRANA"
+  },
+  {
    "name": "KLC.Riža Basmati 500 g",
    "brand": "K-Classic",
    "price": 1.35,
@@ -450,6 +639,33 @@
    "price": 3.69,
    "unit": "kg",
    "unit_price": 7.38,
+   "net_quantity": 0.5,
+   "category": "HRANA"
+  },
+  {
+   "name": "Maggi krem juha brokula mrkva 52 g",
+   "brand": "Maggi",
+   "price": 1.29,
+   "unit": "kg",
+   "unit_price": 24.81,
+   "net_quantity": 0.052,
+   "category": "HRANA"
+  },
+  {
+   "name": "Kupus kiseli masl.ulje i češ. 500g/435g",
+   "brand": "Kupus kiseli 500 g",
+   "price": 2.29,
+   "unit": "kg",
+   "unit_price": 5.264,
+   "net_quantity": 0.5,
+   "category": "HRANA"
+  },
+  {
+   "name": "Kupus kiseli buč.ulje i češ. 500g/435g",
+   "brand": "Kupus kiseli 500 g",
+   "price": 2.29,
+   "unit": "kg",
+   "unit_price": 5.264,
    "net_quantity": 0.5,
    "category": "HRANA"
   },
@@ -490,12 +706,66 @@
    "category": "HRANA"
   },
   {
+   "name": "Droga krastavci 670 g/350 g",
+   "brand": "Droga",
+   "price": 2.79,
+   "unit": "kg",
+   "unit_price": 7.971,
+   "net_quantity": 0.67,
+   "category": "HRANA"
+  },
+  {
+   "name": "Droga delikatesni krastavci 680g/360g",
+   "brand": "Droga",
+   "price": 3.49,
+   "unit": "kg",
+   "unit_price": 9.694,
+   "net_quantity": 0.68,
+   "category": "HRANA"
+  },
+  {
+   "name": "Droga cikla u octu 670g/400g",
+   "brand": "Droga",
+   "price": 2.49,
+   "unit": "kg",
+   "unit_price": 6.225,
+   "net_quantity": 0.67,
+   "category": "HRANA"
+  },
+  {
    "name": "KLC.Cvjetača 450 g",
    "brand": "K- Classic",
    "price": 0.89,
    "unit": "kg",
    "unit_price": 1.978,
    "net_quantity": 0.45,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC Mahune narezane 450 g",
+   "brand": "K- Classic",
+   "price": 1.69,
+   "unit": "kg",
+   "unit_price": 3.756,
+   "net_quantity": 0.45,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Brokula 450 g",
+   "brand": "K- Classic",
+   "price": 1.59,
+   "unit": "kg",
+   "unit_price": 3.533,
+   "net_quantity": 0.45,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Mahune narezane 1000g",
+   "brand": "K- Classic",
+   "price": 2.35,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
    "category": "HRANA"
   },
   {
@@ -540,6 +810,15 @@
    "price": 1.19,
    "unit": "kg",
    "unit_price": 2.644,
+   "net_quantity": 0.45,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Mlade mahune 450g",
+   "brand": "K- Classic",
+   "price": 1.49,
+   "unit": "kg",
+   "unit_price": 3.311,
    "net_quantity": 0.45,
    "category": "HRANA"
   },
@@ -607,12 +886,30 @@
    "category": "HRANA"
   },
   {
+   "name": "KPur. Pileći batak cca 600 g",
+   "brand": "K- Purland",
+   "price": 3.99,
+   "unit": "kg",
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
    "name": "KPur. Pileća prsa s kož i kost cca600g",
    "brand": "K-Purland",
    "price": 5.99,
    "unit": "kg",
    "unit_price": null,
    "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "KBio.Brokula 750 g",
+   "brand": "K-Bio",
+   "price": 4.99,
+   "unit": "kg",
+   "unit_price": 6.653,
+   "net_quantity": 0.75,
    "category": "HRANA"
   },
   {
@@ -634,6 +931,24 @@
    "category": "HRANA"
   },
   {
+   "name": "Mutti umak rajčica i ljuta paprika 400 g",
+   "brand": "Mutti",
+   "price": 2.09,
+   "unit": "kg",
+   "unit_price": 5.225,
+   "net_quantity": 0.4,
+   "category": "HRANA"
+  },
+  {
+   "name": "Krumpir crveni 2,5 kg",
+   "brand": "Krumpir crveni",
+   "price": 2.69,
+   "unit": "kg",
+   "unit_price": 1.076,
+   "net_quantity": 2.5,
+   "category": "HRANA"
+  },
+  {
    "name": "KLC.Baguette šampinjoni 250 g 2/1",
    "brand": "K-Classic",
    "price": 1.59,
@@ -643,12 +958,57 @@
    "category": "HRANA"
   },
   {
+   "name": "Ovko bio baby kašica brokula krump.190g",
+   "brand": "Ovko",
+   "price": 0.85,
+   "unit": "kg",
+   "unit_price": 4.474,
+   "net_quantity": 0.19,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Špinat 450g_OC",
+   "brand": "K-Classic",
+   "price": 0.89,
+   "unit": "kg",
+   "unit_price": 1.978,
+   "net_quantity": 0.45,
+   "category": "HRANA"
+  },
+  {
    "name": "KLC.Gyros riža 750 g",
    "brand": "K-Classic",
    "price": 4.99,
    "unit": "kg",
    "unit_price": 6.653,
    "net_quantity": 0.75,
+   "category": "HRANA"
+  },
+  {
+   "name": "K-Favourites Pommes batat 500g",
+   "brand": "K-Favourites",
+   "price": 2.99,
+   "unit": "kg",
+   "unit_price": 5.98,
+   "net_quantity": 0.5,
+   "category": "HRANA"
+  },
+  {
+   "name": "KFav.Krastavci kor.čili Prem.330g/190g",
+   "brand": "K-Favourites NMNP",
+   "price": 1.49,
+   "unit": "kg",
+   "unit_price": 7.842,
+   "net_quantity": 0.33,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Krastavci kornišon 670g/370g vg",
+   "brand": "K-Classic",
+   "price": 1.99,
+   "unit": "kg",
+   "unit_price": 5.378,
+   "net_quantity": 0.67,
    "category": "HRANA"
   },
   {
@@ -679,12 +1039,48 @@
    "category": "HRANA"
   },
   {
+   "name": "K-Fav.NMNP.Cikla 670g/360 g_OC",
+   "brand": "K-Favourites",
+   "price": 1.45,
+   "unit": "kg",
+   "unit_price": 4.028,
+   "net_quantity": 0.67,
+   "category": "HRANA"
+  },
+  {
+   "name": "KBio.Krumpir 650 g",
+   "brand": "KBio",
+   "price": 2.29,
+   "unit": "kg",
+   "unit_price": 3.523,
+   "net_quantity": 0.65,
+   "category": "HRANA"
+  },
+  {
    "name": "Vegeta Natur Pasta Paprika blaga 190g",
    "brand": "Vegeta Natur",
    "price": 1.99,
    "unit": "kg",
    "unit_price": 10.47,
    "net_quantity": 0.19,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Paprika pečena 280 g",
+   "brand": "K-Classic",
+   "price": 2.99,
+   "unit": "kg",
+   "unit_price": 10.68,
+   "net_quantity": 0.28,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC Krumpir sa špekom i lukom 500 g",
+   "brand": "K-Classic",
+   "price": 1.89,
+   "unit": "kg",
+   "unit_price": 3.78,
+   "net_quantity": 0.5,
    "category": "HRANA"
   },
   {
@@ -760,12 +1156,84 @@
    "category": "HRANA"
   },
   {
+   "name": "KLC.Špinat mladi 450 g",
+   "brand": "K-Classic",
+   "price": 1.19,
+   "unit": "kg",
+   "unit_price": 2.644,
+   "net_quantity": 0.45,
+   "category": "HRANA"
+  },
+  {
+   "name": "Benita Cikla rezana 670g/380g_OC",
+   "brand": "Benita",
+   "price": 1.35,
+   "unit": "kg",
+   "unit_price": 3.553,
+   "net_quantity": 0.67,
+   "category": "HRANA"
+  },
+  {
+   "name": "Benita Cikla rezana 1600g/1100g",
+   "brand": "Benita",
+   "price": 4.99,
+   "unit": "kg",
+   "unit_price": 4.536,
+   "net_quantity": 1.6,
+   "category": "HRANA"
+  },
+  {
+   "name": "Rajčica mini roma 500g",
+   "brand": "Rajčica mini roma",
+   "price": 2.99,
+   "unit": "kg",
+   "unit_price": 5.98,
+   "net_quantity": 0.5,
+   "category": "HRANA"
+  },
+  {
    "name": "KLC. Gotovo jelo grašak sa svinj. 800 g",
    "brand": "K-Classic",
    "price": 4.09,
    "unit": "kg",
    "unit_price": 5.113,
    "net_quantity": 0.8,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Cikla u kuglicama 370ml/330g",
+   "brand": "K-Classic",
+   "price": 1.99,
+   "unit": "kg",
+   "unit_price": 6.03,
+   "net_quantity": 0.33,
+   "category": "HRANA"
+  },
+  {
+   "name": "Celer štapići 180 g",
+   "brand": "#",
+   "price": 0.99,
+   "unit": "kg",
+   "unit_price": 5.5,
+   "net_quantity": 0.18,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Češnjak u granulama 100g",
+   "brand": "K-Classic",
+   "price": 1.65,
+   "unit": "kg",
+   "unit_price": 16.5,
+   "net_quantity": 0.1,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Češnjak u granulama 30g",
+   "brand": "K-Classic",
+   "price": 0.51,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 0.03,
    "category": "HRANA"
   },
   {
@@ -796,6 +1264,24 @@
    "category": "HRANA"
   },
   {
+   "name": "Bio.Batat 500g",
+   "brand": "Bio",
+   "price": 2.49,
+   "unit": "kg",
+   "unit_price": 4.98,
+   "net_quantity": 0.5,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Cikla u trakicama 520/350 g",
+   "brand": "K-Classic",
+   "price": 2.25,
+   "unit": "kg",
+   "unit_price": 6.429,
+   "net_quantity": 0.52,
+   "category": "HRANA"
+  },
+  {
    "name": "KVeg.UHT Bio napitak kokos i riža 1L vg.",
    "brand": "K-Take it veggie",
    "price": 1.69,
@@ -820,6 +1306,42 @@
    "unit": "kg",
    "unit_price": 5.3,
    "net_quantity": 0.5,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.NMNP. Krastavac II kl 670 g/330 g",
+   "brand": "K-Classic",
+   "price": 1.65,
+   "unit": "kg",
+   "unit_price": 5,
+   "net_quantity": 0.67,
+   "category": "HRANA"
+  },
+  {
+   "name": "Toco crv. naranča avokado cikla 0,5l PET",
+   "brand": "Toco",
+   "price": 1.15,
+   "unit": "l",
+   "unit_price": 2.1,
+   "net_quantity": 0.51,
+   "category": "PIĆE"
+  },
+  {
+   "name": "Toco crv. naranča avokado cikla 1,5l PET",
+   "brand": "Toco",
+   "price": 1.39,
+   "unit": "l",
+   "unit_price": 0.86,
+   "net_quantity": 1.52,
+   "category": "PIĆE"
+  },
+  {
+   "name": "KLC.Rajčica sjeckana za pizzu 400 g",
+   "brand": "K-Classic",
+   "price": 0.84,
+   "unit": "kg",
+   "unit_price": 2.1,
+   "net_quantity": 0.4,
    "category": "HRANA"
   },
   {
@@ -856,6 +1378,15 @@
    "unit": "kg",
    "unit_price": 10.71,
    "net_quantity": 0.35,
+   "category": "HRANA"
+  },
+  {
+   "name": "Ledo Brokula 400 g",
+   "brand": "Ledo",
+   "price": 2.79,
+   "unit": "kg",
+   "unit_price": 6.975,
+   "net_quantity": 0.4,
    "category": "HRANA"
   },
   {
@@ -922,12 +1453,57 @@
    "category": "HRANA"
   },
   {
+   "name": "KLC.Paprika ljuta mljevena 100g",
+   "brand": "K-Classic",
+   "price": 1.69,
+   "unit": "kg",
+   "unit_price": 16.9,
+   "net_quantity": 0.1,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Paprika ljuta mljevena 20g",
+   "brand": "K-Classic",
+   "price": 0.49,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 0.02,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Paprika slatka mljevena 100g",
+   "brand": "K-Classic",
+   "price": 0.89,
+   "unit": "kg",
+   "unit_price": 8.9,
+   "net_quantity": 0.1,
+   "category": "HRANA"
+  },
+  {
    "name": "KLC.Peršin usitnjeni 10g",
    "brand": "K-Classic",
    "price": 0.29,
    "unit": null,
    "unit_price": null,
    "net_quantity": 0.01,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Chili mljeveni 30g",
+   "brand": "K-Classic",
+   "price": 0.68,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 0.03,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Paprika slatka mljevena 30g",
+   "brand": "K-Classic",
+   "price": 0.54,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 0.03,
    "category": "HRANA"
   },
   {
@@ -940,12 +1516,93 @@
    "category": "HRANA"
   },
   {
+   "name": "Otkošteni pileći batak zabatak",
+   "brand": null,
+   "price": 8.99,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Rajčica pasir.Rustica s bosiljk 690g",
+   "brand": "K-Classic",
+   "price": 1.45,
+   "unit": "kg",
+   "unit_price": 2.101,
+   "net_quantity": 0.69,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Rajčica pasirana Rustica 690 g",
+   "brand": "K-Classic",
+   "price": 1.69,
+   "unit": "kg",
+   "unit_price": 2.449,
+   "net_quantity": 0.69,
+   "category": "HRANA"
+  },
+  {
+   "name": "Ledo Mješavina povr.heljd.i brokula 350g",
+   "brand": "Ledo",
+   "price": 2.99,
+   "unit": "kg",
+   "unit_price": 8.543,
+   "net_quantity": 0.35,
+   "category": "HRANA"
+  },
+  {
+   "name": "Međimursko pile - pileći batak 500g",
+   "brand": "Međimursko pile",
+   "price": 2.79,
+   "unit": "kg",
+   "unit_price": 5.58,
+   "net_quantity": 0.5,
+   "category": "HRANA"
+  },
+  {
    "name": "Međimursko pile-pileća prsa bez kože",
    "brand": "Međimursko pile",
    "price": 7.99,
    "unit": null,
    "unit_price": null,
    "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Zvijezda Cikla rezana 670g/360g",
+   "brand": "Zvijezda",
+   "price": 2.09,
+   "unit": "kg",
+   "unit_price": 5.806,
+   "net_quantity": 0.67,
+   "category": "HRANA"
+  },
+  {
+   "name": "Zvijezda Krastavci delikates 350g/170g",
+   "brand": "Zvijezda",
+   "price": 2.89,
+   "unit": "kg",
+   "unit_price": 17,
+   "net_quantity": 0.35,
+   "category": "HRANA"
+  },
+  {
+   "name": "Zvijezda Krastavci klasik 670g/330g",
+   "brand": "Zvijezda",
+   "price": 2.79,
+   "unit": "kg",
+   "unit_price": 8.455,
+   "net_quantity": 0.67,
+   "category": "HRANA"
+  },
+  {
+   "name": "Bakina Tajna Ajvar s patlidžanom 300g",
+   "brand": "Bakina Tajna",
+   "price": 5.49,
+   "unit": "kg",
+   "unit_price": 18.3,
+   "net_quantity": 0.3,
    "category": "HRANA"
   },
   {
@@ -991,6 +1648,33 @@
    "unit": "kg",
    "unit_price": 9.9,
    "net_quantity": 0.5,
+   "category": "HRANA"
+  },
+  {
+   "name": "Cekin Pil. batak i zab. ca.400g svježi",
+   "brand": "Cekin",
+   "price": 5.15,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Cekin Pileći batak cca 450g svježi",
+   "brand": "Cekin",
+   "price": 5.79,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Vindon Pureći batak cca. 850g svj.",
+   "brand": "Vindon",
+   "price": 4.79,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
    "category": "HRANA"
   },
   {
@@ -1081,6 +1765,60 @@
    "unit": "kg",
    "unit_price": 7.132,
    "net_quantity": 0.4,
+   "category": "HRANA"
+  },
+  {
+   "name": "Podravka krastavci delikates 670g/370g",
+   "brand": "Podravka",
+   "price": 2.99,
+   "unit": "kg",
+   "unit_price": 8.081,
+   "net_quantity": 0.67,
+   "category": "HRANA"
+  },
+  {
+   "name": "Podravka cikla 660g/380g",
+   "brand": "Podravka",
+   "price": 2.49,
+   "unit": "kg",
+   "unit_price": 6.553,
+   "net_quantity": 0.66,
+   "category": "HRANA"
+  },
+  {
+   "name": "Podravka Krastavci kiseli 330g/175g",
+   "brand": "Podravka",
+   "price": 2.49,
+   "unit": "kg",
+   "unit_price": 14.23,
+   "net_quantity": 0.33,
+   "category": "HRANA"
+  },
+  {
+   "name": "Zvijezda Krastavci delikates 670g/350g",
+   "brand": "Zvijezda",
+   "price": 2.39,
+   "unit": "kg",
+   "unit_price": 6.829,
+   "net_quantity": 0.67,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Paprika rezana 650g/320g",
+   "brand": "K-Classic",
+   "price": 3.09,
+   "unit": "kg",
+   "unit_price": 9.656,
+   "net_quantity": 0.65,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Paprika rezana 320g/165g",
+   "brand": "K-Classic",
+   "price": 1.39,
+   "unit": "kg",
+   "unit_price": 8.424,
+   "net_quantity": 0.32,
    "category": "HRANA"
   },
   {
@@ -1183,6 +1921,15 @@
    "category": "HRANA"
   },
   {
+   "name": "Aleva crvena ljuta mlj. paprika 100g",
+   "brand": "Aleva",
+   "price": 2.25,
+   "unit": "kg",
+   "unit_price": 22.5,
+   "net_quantity": 0.1,
+   "category": "HRANA"
+  },
+  {
    "name": "Zvijezda extra djev. maslinovo ulje 1 l",
    "brand": "Zvijezda",
    "price": 13.99,
@@ -1279,6 +2026,15 @@
    "unit": "l",
    "unit_price": 64.9,
    "net_quantity": 0.1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Kotanyi paprika ljuta 35 g",
+   "brand": "Kotanyi",
+   "price": 1.09,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 0.035,
    "category": "HRANA"
   },
   {
@@ -1408,9 +2164,36 @@
    "category": "HRANA"
   },
   {
+   "name": "Kupus kis.gl.AgroD 20kg/1",
+   "brand": "Kupus kiseli Agro Denis",
+   "price": 1.99,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Kelj_OC",
+   "brand": "#",
+   "price": 1.49,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
    "name": "Mrkva košarica 1kg",
    "brand": "Mrkva",
    "price": 1.29,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Poriluk_OC",
+   "brand": "#",
+   "price": 1.99,
    "unit": null,
    "unit_price": null,
    "net_quantity": 1,
@@ -1435,12 +2218,30 @@
    "category": "HRANA"
   },
   {
+   "name": "Krumpir mladi",
+   "brand": "Krumpir mladi",
+   "price": 0.99,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
    "name": "Šampinjon rezani 200 g",
    "brand": "Šampinjoni rezani",
    "price": 1.29,
    "unit": "kg",
    "unit_price": 6.45,
    "net_quantity": 0.2,
+   "category": "HRANA"
+  },
+  {
+   "name": "Krumpir vrećica 5 kg_OC",
+   "brand": "Krumpir_OC",
+   "price": 3.99,
+   "unit": "kg",
+   "unit_price": 0.798,
+   "net_quantity": 5,
    "category": "HRANA"
   },
   {
@@ -1471,9 +2272,81 @@
    "category": "HRANA"
   },
   {
+   "name": "Celer korijen",
+   "brand": "#",
+   "price": 0.99,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
    "name": "Mrkva_OC",
    "brand": "#",
    "price": 0.89,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Paprika babura",
+   "brand": "#",
+   "price": 1.99,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Krastavac",
+   "brand": "#",
+   "price": 1.69,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Paprika rog crvena",
+   "brand": "#",
+   "price": 2.29,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Kupus crveni",
+   "brand": "#",
+   "price": 0.79,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Kupus_OC",
+   "brand": "#",
+   "price": 0.79,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Patlidžan",
+   "brand": "#",
+   "price": 1.29,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Tikvica",
+   "brand": "#",
+   "price": 1.69,
    "unit": null,
    "unit_price": null,
    "net_quantity": 1,
@@ -1489,9 +2362,63 @@
    "category": "HRANA"
   },
   {
+   "name": "Radič crveni",
+   "brand": "#",
+   "price": 3.99,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Paprika zelena",
+   "brand": "#",
+   "price": 2.99,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
    "name": "Luk crveni_OC",
    "brand": "#",
    "price": 0.79,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Kelj pupčar 500g",
+   "brand": "Kelj pupčar",
+   "price": 1.19,
+   "unit": "kg",
+   "unit_price": 2.38,
+   "net_quantity": 0.5,
+   "category": "HRANA"
+  },
+  {
+   "name": "Paprika crvena",
+   "brand": "#",
+   "price": 2.99,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Paprika mix 500 g",
+   "brand": "Paprika mix",
+   "price": 1.99,
+   "unit": "kg",
+   "unit_price": 3.98,
+   "net_quantity": 0.5,
+   "category": "HRANA"
+  },
+  {
+   "name": "Krumpir crveni rinfuza",
+   "brand": "#",
+   "price": 0.99,
    "unit": null,
    "unit_price": null,
    "net_quantity": 1,
@@ -1507,12 +2434,39 @@
    "category": "HRANA"
   },
   {
+   "name": "Salata Iceberg",
+   "brand": "Salata Iceberg",
+   "price": 1.89,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 0.55,
+   "category": "HRANA"
+  },
+  {
    "name": "Šampinjoni zlatni 250g",
    "brand": "Šampinjoni zlatni",
    "price": 1.39,
    "unit": "kg",
    "unit_price": 5.56,
    "net_quantity": 0.25,
+   "category": "HRANA"
+  },
+  {
+   "name": "Kupus kiseli glave Madig 20kg/1",
+   "brand": "Kupus kiseli Madig",
+   "price": 1.99,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Brokula 500g",
+   "brand": "Brokula",
+   "price": 1.99,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 0.5,
    "category": "HRANA"
   },
   {
@@ -1525,6 +2479,114 @@
    "category": "HRANA"
   },
   {
+   "name": "Đumbir",
+   "brand": "#",
+   "price": 4.49,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Krumpir mrežica 2 kg",
+   "brand": "Krumpir",
+   "price": 1.79,
+   "unit": "kg",
+   "unit_price": 0.895,
+   "net_quantity": 2,
+   "category": "HRANA"
+  },
+  {
+   "name": "Krastavci za kiseljenje-kornišoni",
+   "brand": "Krastavac kornišon",
+   "price": 0.99,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Cikla svježa",
+   "brand": "#",
+   "price": 0.79,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Salata zelena kristal kom",
+   "brand": "Salata zelena kristal",
+   "price": 0.89,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 0.35,
+   "category": "HRANA"
+  },
+  {
+   "name": "Salata zelena puterica kom",
+   "brand": "Salata puterica",
+   "price": 0.99,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 0.3,
+   "category": "HRANA"
+  },
+  {
+   "name": "Salata zelena endivija kom",
+   "brand": "Salata endivija",
+   "price": 0.59,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 0.45,
+   "category": "HRANA"
+  },
+  {
+   "name": "Paprika Rotunda",
+   "brand": "#",
+   "price": 1.99,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Cikla kisela 780g/400g",
+   "brand": "Kisko",
+   "price": 1.79,
+   "unit": "kg",
+   "unit_price": 4.475,
+   "net_quantity": 0.78,
+   "category": "HRANA"
+  },
+  {
+   "name": "Krastavac salatni komad",
+   "brand": "Krastavac",
+   "price": 0.89,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 0.25,
+   "category": "HRANA"
+  },
+  {
+   "name": "Batat 1kg",
+   "brand": "Batat",
+   "price": 2.49,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Salata zelena rucola 125g",
+   "brand": null,
+   "price": 1.29,
+   "unit": "kg",
+   "unit_price": 10.32,
+   "net_quantity": 0.125,
+   "category": "HRANA"
+  },
+  {
    "name": "Luk crveni 1kg",
    "brand": "Luk crveni",
    "price": 0.89,
@@ -1534,12 +2596,102 @@
    "category": "HRANA"
   },
   {
+   "name": "Rajčica grapolo",
+   "brand": "#",
+   "price": 2.69,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Krumpir lički 2,5kg",
+   "brand": "Krumpir lički",
+   "price": 3.69,
+   "unit": "kg",
+   "unit_price": 1.476,
+   "net_quantity": 2.5,
+   "category": "HRANA"
+  },
+  {
    "name": "Luk rukavac žuti kom",
    "brand": "Luk žuti",
    "price": 0.99,
    "unit": null,
    "unit_price": null,
    "net_quantity": 0.5,
+   "category": "HRANA"
+  },
+  {
+   "name": "Batat",
+   "brand": "#",
+   "price": 1.99,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Rajčica cherry grapolo 500g",
+   "brand": "Rajčica cherry",
+   "price": 2.99,
+   "unit": "kg",
+   "unit_price": 5.98,
+   "net_quantity": 0.5,
+   "category": "HRANA"
+  },
+  {
+   "name": "Salata hrastov list crveni",
+   "brand": "Salata hrastov list",
+   "price": 0.99,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 0.25,
+   "category": "HRANA"
+  },
+  {
+   "name": "Rajčica beef",
+   "brand": "#",
+   "price": 2.69,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Mahuna zelena plosnata 500g",
+   "brand": "Mahuna zelena",
+   "price": 2.49,
+   "unit": "kg",
+   "unit_price": 4.98,
+   "net_quantity": 0.5,
+   "category": "HRANA"
+  },
+  {
+   "name": "Krumpir oprani - vrećica 5 kg",
+   "brand": "Krumpir oprani",
+   "price": 4.49,
+   "unit": "kg",
+   "unit_price": 0.898,
+   "net_quantity": 5,
+   "category": "HRANA"
+  },
+  {
+   "name": "Kupus kiseli 800g/600g",
+   "brand": "KISKO",
+   "price": 1.99,
+   "unit": "kg",
+   "unit_price": 3.317,
+   "net_quantity": 0.8,
+   "category": "HRANA"
+  },
+  {
+   "name": "Češnjak mrežica 250g",
+   "brand": "Češnjak",
+   "price": 1.59,
+   "unit": "kg",
+   "unit_price": 6.36,
+   "net_quantity": 0.25,
    "category": "HRANA"
   },
   {
@@ -1570,12 +2722,57 @@
    "category": "HRANA"
   },
   {
+   "name": "Krumpir oprani 7,5kg",
+   "brand": "Krumpir oprani",
+   "price": 6.99,
+   "unit": "kg",
+   "unit_price": 0.932,
+   "net_quantity": 7.5,
+   "category": "HRANA"
+  },
+  {
    "name": "Luk ljubičasti rukavac",
    "brand": "Luk ljubičasti",
    "price": 1.29,
    "unit": null,
    "unit_price": null,
    "net_quantity": 0.4,
+   "category": "HRANA"
+  },
+  {
+   "name": "Rajčica volovsko srce",
+   "brand": "#",
+   "price": 2.99,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Salata hrastov list zeleni",
+   "brand": "Salata hrastov list",
+   "price": 0.99,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 0.25,
+   "category": "HRANA"
+  },
+  {
+   "name": "Paprika ljuta",
+   "brand": "#",
+   "price": 3.99,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "KBio.Krastavac komad",
+   "brand": "KBio",
+   "price": 1.29,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 0.5,
    "category": "HRANA"
   },
   {
@@ -1597,12 +2794,39 @@
    "category": "HRANA"
   },
   {
+   "name": "Krumpir za pečenje 3kg",
+   "brand": "Krumpir",
+   "price": 2.99,
+   "unit": "kg",
+   "unit_price": 0.997,
+   "net_quantity": 3,
+   "category": "HRANA"
+  },
+  {
+   "name": "Krumpir za kuhanje 3kg",
+   "brand": "Krumpir",
+   "price": 2.99,
+   "unit": "kg",
+   "unit_price": 0.997,
+   "net_quantity": 3,
+   "category": "HRANA"
+  },
+  {
    "name": "Muller Riso Desert riža na mlij.van.200g",
    "brand": "Muller",
    "price": 0.95,
    "unit": "kg",
    "unit_price": 4.75,
    "net_quantity": 0.2,
+   "category": "HRANA"
+  },
+  {
+   "name": "KFav.Krastavci u medu premium 330g",
+   "brand": "K-Favourites",
+   "price": 1.49,
+   "unit": "kg",
+   "unit_price": 4.515,
+   "net_quantity": 0.33,
    "category": "HRANA"
   },
   {
@@ -1678,6 +2902,33 @@
    "category": "HRANA"
   },
   {
+   "name": "KLC.Špinat kremasti 450 g",
+   "brand": "K-Classic",
+   "price": 1.99,
+   "unit": "kg",
+   "unit_price": 4.422,
+   "net_quantity": 0.45,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Chili mljeveni bočica 40g",
+   "brand": "K-Classic",
+   "price": 2.25,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 0.04,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Češnjak sjeckani bočica 60g",
+   "brand": "K-Classic",
+   "price": 2.25,
+   "unit": "kg",
+   "unit_price": 37.5,
+   "net_quantity": 0.06,
+   "category": "HRANA"
+  },
+  {
    "name": "KLC.Grašak s mrkvom mladi 850ml",
    "brand": "K-Classic",
    "price": 2.29,
@@ -1714,6 +2965,15 @@
    "category": "HRANA"
   },
   {
+   "name": "Pileći batak obiteljsko pakiranje",
+   "brand": "Cekin",
+   "price": 3.79,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
    "name": "Š extra Papar crni mljeveni 55g",
    "brand": "Š extra",
    "price": 1.29,
@@ -1732,12 +2992,30 @@
    "category": "HRANA"
   },
   {
+   "name": "Š extra Paprika ljuta tucana 35g",
+   "brand": "Š extra",
+   "price": 1.19,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 0.035,
+   "category": "HRANA"
+  },
+  {
    "name": "KLC.Maslinovo ulje extra djev.0,75L",
    "brand": "K-Classic",
    "price": 6.69,
    "unit": "l",
    "unit_price": 8.92,
    "net_quantity": 0.687,
+   "category": "HRANA"
+  },
+  {
+   "name": "Kpur pureći batak",
+   "brand": "K Purland",
+   "price": 4.19,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
    "category": "HRANA"
   },
   {
@@ -1765,6 +3043,15 @@
    "unit": null,
    "unit_price": null,
    "net_quantity": 1.2,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Rajčica sjeckana zač.bilje 425ml",
+   "brand": "K-Classic",
+   "price": 0.99,
+   "unit": "kg",
+   "unit_price": 2.329,
+   "net_quantity": 0.4,
    "category": "HRANA"
   },
   {
@@ -1810,6 +3097,15 @@
    "unit": "kg",
    "unit_price": 18.78,
    "net_quantity": 0.09,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Rajčica koncentrat 190 g",
+   "brand": "K-Classic",
+   "price": 1.15,
+   "unit": "kg",
+   "unit_price": 6.053,
+   "net_quantity": 0.19,
    "category": "HRANA"
   },
   {
@@ -1903,6 +3199,24 @@
    "category": "HRANA"
   },
   {
+   "name": "Vitaminka Krastavac delikates 295g",
+   "brand": "Vitaminka",
+   "price": 2.95,
+   "unit": "kg",
+   "unit_price": null,
+   "net_quantity": 0.295,
+   "category": "HRANA"
+  },
+  {
+   "name": "Vitaminka Krastavac delikates 520g",
+   "brand": "Vitaminka",
+   "price": 3.29,
+   "unit": "kg",
+   "unit_price": 6.327,
+   "net_quantity": 0.52,
+   "category": "HRANA"
+  },
+  {
    "name": "KBio.Grašak 750g",
    "brand": "K-Bio",
    "price": 4.25,
@@ -1921,12 +3235,39 @@
    "category": "HRANA"
   },
   {
+   "name": "KLC.Rajčica pasirana 500g_OC",
+   "brand": "K-Classic",
+   "price": 0.75,
+   "unit": "kg",
+   "unit_price": 1.5,
+   "net_quantity": 0.5,
+   "category": "HRANA"
+  },
+  {
+   "name": "Vitaminka Krastavac med i paprika 540g",
+   "brand": "Vitaminka",
+   "price": 4.85,
+   "unit": "kg",
+   "unit_price": 16.72,
+   "net_quantity": 0.54,
+   "category": "HRANA"
+  },
+  {
    "name": "KBio.Maslinovo ulje extra djev.0,5L",
    "brand": "K-Bio",
    "price": 5.99,
    "unit": "l",
    "unit_price": 11.98,
    "net_quantity": 0.457,
+   "category": "HRANA"
+  },
+  {
+   "name": "Cekin Gavelino Pileći batak sa zabatkom",
+   "brand": "Cekin",
+   "price": 4.79,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 1,
    "category": "HRANA"
   },
   {
@@ -1993,12 +3334,57 @@
    "category": "HRANA"
   },
   {
+   "name": "Citres Krastavci u octu srednji290g/160g",
+   "brand": "Citres",
+   "price": 1.99,
+   "unit": "kg",
+   "unit_price": 12.44,
+   "net_quantity": 0.29,
+   "category": "HRANA"
+  },
+  {
+   "name": "Citres Krastavci u octu mal.Ce.290g/160g",
+   "brand": "Citres",
+   "price": 1.99,
+   "unit": "kg",
+   "unit_price": 12.44,
+   "net_quantity": 0.29,
+   "category": "HRANA"
+  },
+  {
+   "name": "Vitaminka Krastavac Delikates 680g/370g",
+   "brand": "Vitaminka",
+   "price": 3.79,
+   "unit": "kg",
+   "unit_price": 10.24,
+   "net_quantity": 0.68,
+   "category": "HRANA"
+  },
+  {
    "name": "Kotanyi Sol morska sitna jodirana 120g",
    "brand": "Kotanyi",
    "price": 1.99,
    "unit": "kg",
    "unit_price": 16.58,
    "net_quantity": 0.12,
+   "category": "HRANA"
+  },
+  {
+   "name": "KFav.Krastavci kis.med i čili.550/300g",
+   "brand": "K-Favourites",
+   "price": 2.29,
+   "unit": "kg",
+   "unit_price": 7.633,
+   "net_quantity": 0.55,
+   "category": "HRANA"
+  },
+  {
+   "name": "KFav.Krastavci kis.sa balza.oct.550/300g",
+   "brand": "K-Favourites",
+   "price": 2.29,
+   "unit": "kg",
+   "unit_price": 7.633,
+   "net_quantity": 0.55,
    "category": "HRANA"
   },
   {
@@ -2029,6 +3415,15 @@
    "category": "HRANA"
   },
   {
+   "name": "O`Plant Brokula smrznuta 400 g",
+   "brand": "O`Plant",
+   "price": 2.19,
+   "unit": "kg",
+   "unit_price": 5.475,
+   "net_quantity": 0.4,
+   "category": "HRANA"
+  },
+  {
    "name": "O`Plant Grašak mladi smrznuti 400 g",
    "brand": "O`Plant",
    "price": 1.79,
@@ -2038,10 +3433,37 @@
    "category": "HRANA"
   },
   {
+   "name": "KLC.Đumbir 30 g",
+   "brand": "K-Classic",
+   "price": 0.69,
+   "unit": null,
+   "unit_price": null,
+   "net_quantity": 0.03,
+   "category": "HRANA"
+  },
+  {
+   "name": "KLC.Cikla u kockicama 670/430g",
+   "brand": "K-Classic",
+   "price": 1.39,
+   "unit": "kg",
+   "unit_price": 3.233,
+   "net_quantity": 0.67,
+   "category": "HRANA"
+  },
+  {
    "name": "KBio.Luk žuti 1kg",
    "brand": "KBio",
    "price": 1.99,
    "unit": "kg",
+   "unit_price": null,
+   "net_quantity": 1,
+   "category": "HRANA"
+  },
+  {
+   "name": "Imbiss Vindija pileći batak i zabatak",
+   "brand": "Vindija",
+   "price": 5.99,
+   "unit": null,
    "unit_price": null,
    "net_quantity": 1,
    "category": "HRANA"
@@ -2089,6 +3511,15 @@
    "unit": "kg",
    "unit_price": 4.95,
    "net_quantity": 0.2,
+   "category": "HRANA"
+  },
+  {
+   "name": "Podravka Juha krem od poriluka 60 g",
+   "brand": "Podravka",
+   "price": 1.39,
+   "unit": "kg",
+   "unit_price": 23.17,
+   "net_quantity": 0.06,
    "category": "HRANA"
   },
   {

@@ -127,3 +127,12 @@ describe("matchPrimaryCandidates - samo primarni proizvodi", () => {
     expect(matchPrimaryCandidates(index, "mrkva").map((c) => c.product.id)).toEqual(["1"]);
   });
 });
+
+describe("splitFrozenRequest", () => {
+  it("prepoznaje izričit zahtjev za smrznuto i vraća naziv bez te riječi", async () => {
+    const { splitFrozenRequest } = await import("@/lib/normalize");
+    expect(splitFrozenRequest("Smrznuti grašak")).toEqual({ cleaned: "grašak", frozen: true });
+    expect(splitFrozenRequest("špinat zamrznuti")).toEqual({ cleaned: "špinat", frozen: true });
+    expect(splitFrozenRequest("Grašak")).toEqual({ cleaned: "Grašak", frozen: false });
+  });
+});

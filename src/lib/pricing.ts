@@ -1,4 +1,5 @@
 import { isFoodProduct, matchPrimaryCandidates, type ProductIndex } from "@/lib/matching";
+import { splitFrozenRequest } from "@/lib/normalize";
 import type { ProductForMatching } from "@/lib/products";
 
 export type UnitBasis = "kg" | "l" | "kom";
@@ -28,6 +29,13 @@ export type PricingRule = {
   mode: PricingMode;
   /** Sastojak se u trgovini prodaje i na vagu (povrće, meso) - smije se računati proporcionalno po kg. */
   looseOk: boolean;
+  /**
+   * Svježe povrće: prvo se traže proizvodi koji nisu smrznuti; smrznuti se
+   * koriste samo ako svježeg nema (npr. grašak, špinat).
+   */
+  fresh?: boolean;
+  /** Recept je izričito tražio smrznuto ("smrznuti grašak") - samo smrznuti proizvodi. */
+  requireFrozen?: boolean;
 };
 
 export type RuleResolver = (ingredientName: string) => PricingRule | undefined;
@@ -115,9 +123,24 @@ function packSizeOf(product: ProductForMatching, basis: UnitBasis): number | nul
  * pakiranju - npr. Lidl "Svježa pileća prsa cca 500g" 5,99, Kaufland
  * "Mrkva_OC" 0,89). Na vagu se računa samo uz izričitu oznaku u nazivu
  * ("rinfuza", "cca") ili, za sastojke koje pravilo označi kao `looseOk`,
- * kad naziv uopće ne navodi veličinu.
+ * kad naziv uopće ne navodi veličinu ili kad trgovina prijavi unit = kg s
+ * unit_price = cijena.
  */
 function isSoldByWeight(product: ProductForMatching, looseOk: boolean): boolean {
+  // Lidl artikl koji izričito prijavljuje cijenu po kg (unit = kg) s
+  // unit_price jednakim cijeni, a net_quantity je samo procijenjena težina
+  // komada (npr. "Tikvica" 1,69 €/kg, net_quantity 0,3). Lidlovo unit = kom
+  // znači cijenu po KOMADU (cvjetača, salate, krastavac) - to ostaje pakiranje.
+  if (
+    looseOk &&
+    product.unit === "kg" &&
+    product.unit_price !== null &&
+    product.net_quantity !== null &&
+    product.net_quantity < 1 &&
+    Math.abs(product.unit_price - product.price) < 0.005
+  ) {
+    return true;
+  }
   if (product.net_quantity !== 1) return false;
   if (LOOSE_CUE.test(product.name)) return true;
   return looseOk && !EXPLICIT_SIZE.test(product.name);
@@ -212,25 +235,37 @@ export type PartPriceResult = {
   averagedCount: number;
   /** true = sastojak nema ručno pravilo, pa je cijena generička procjena. */
   estimated: boolean;
+  /** true = odabran je smrznuti proizvod (recept ga traži ili svježeg nema). */
+  frozen: boolean;
   purchase: PurchaseResult | null;
   /** Cijena kupnje, zaokružena na 2 decimale. null = cijena nedostupna. */
   itemPrice: number | null;
 };
 
 function unavailable(name: string, offerCount: number, estimated: boolean): PartPriceResult {
-  return { name, matchedName: null, offerCount, averagedCount: 0, estimated, purchase: null, itemPrice: null };
+  return { name, matchedName: null, offerCount, averagedCount: 0, estimated, frozen: false, purchase: null, itemPrice: null };
 }
 
-function productsForIngredient(index: ProductIndex, name: string, rule: PricingRule | undefined): ProductForMatching[] {
-  if (!rule) return matchPrimaryCandidates(index, name).map((c) => c.product);
-  return index
-    .filter(
-      (e) =>
-        isFoodProduct(e.product) &&
-        rule.include.test(e.normalizedName) &&
-        !(rule.exclude && rule.exclude.test(e.normalizedName))
-    )
-    .map((e) => e.product);
+type Candidate = { product: ProductForMatching; normalizedName: string };
+
+// Smrznuto se prepoznaje po nazivu i po marki (Lidl Freshona/Chira, Kaufland
+// Ledo); dio Kauflandovog smrznutog nije ničim označen - njega hvata to što
+// artikl na vagu ima prednost pred pakiranjem.
+const FROZEN_NAME = /smrz|zamrz|\bledo\b|frozen|duboko|\biglo\b/;
+const FROZEN_BRAND = /freshona|ledo|chira|iglo|findus|frozy/i;
+
+function isFrozen(c: Candidate): boolean {
+  return FROZEN_NAME.test(c.normalizedName) || (c.product.brand !== null && FROZEN_BRAND.test(c.product.brand));
+}
+
+function candidatesForIngredient(index: ProductIndex, name: string, rule: PricingRule | undefined): Candidate[] {
+  if (!rule) return matchPrimaryCandidates(index, name);
+  return index.filter(
+    (e) =>
+      isFoodProduct(e.product) &&
+      rule.include.test(e.normalizedName) &&
+      !(rule.exclude && rule.exclude.test(e.normalizedName))
+  );
 }
 
 /**
@@ -258,7 +293,32 @@ export function priceIngredientPart(
   const need = convertToBasis(quantity, unit, basis);
   if (need === null) return unavailable(name, 0, estimated);
 
-  const offers = buildOffers(productsForIngredient(index, name, rule), basis, need, rule?.looseOk ?? false, !estimated);
+  // Svježe ima prednost; smrznuto samo kad ga recept izričito traži ili kad
+  // svježeg nema. Sastojci s ručnim pravilom bez `fresh` (meso, začini, riža)
+  // ne filtriraju smrznuto.
+  const query = splitFrozenRequest(name);
+  const frozenRequested = query.frozen || (rule?.requireFrozen ?? false);
+  const candidates = candidatesForIngredient(index, query.cleaned, rule);
+  const frozenOnes = candidates.filter(isFrozen);
+  const pools: Array<{ pool: Candidate[]; frozen: boolean }> = frozenRequested
+    ? [{ pool: frozenOnes, frozen: true }]
+    : rule && !rule.fresh
+      ? [{ pool: candidates, frozen: false }]
+      : [
+          { pool: candidates.filter((c) => !isFrozen(c)), frozen: false },
+          { pool: frozenOnes, frozen: true },
+        ];
+
+  let offers: Offer[] = [];
+  let usedFrozen = false;
+  for (const { pool, frozen } of pools) {
+    // Smrznuto se nikad ne prodaje na vagu - vrećica od 1 kg je pakiranje.
+    offers = buildOffers(pool.map((c) => c.product), basis, need, (rule?.looseOk ?? false) && !frozen, !estimated);
+    if (offers.length > 0) {
+      usedFrozen = frozen;
+      break;
+    }
+  }
   if (offers.length === 0) return unavailable(name, 0, estimated);
 
   const loose = offers.filter((o): o is LooseOffer => o.kind === "loose");
@@ -272,6 +332,7 @@ export function priceIngredientPart(
       offerCount: offers.length,
       averagedCount: averaged ? loose.length : 1,
       estimated,
+      frozen: usedFrozen,
       purchase: {
         basis,
         neededQuantity: need,
@@ -299,6 +360,7 @@ export function priceIngredientPart(
     offerCount: offers.length,
     averagedCount: 1,
     estimated,
+    frozen: usedFrozen,
     purchase: {
       basis,
       neededQuantity: need,

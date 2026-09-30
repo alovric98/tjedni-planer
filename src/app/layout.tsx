@@ -1,18 +1,25 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans } from "next/font/google";
+import { Fraunces, Inter } from "next/font/google";
 import { TabNav } from "@/components/TabNav";
 import { AppHeader } from "@/components/AppHeader";
 import { ToastHost } from "@/components/Toast";
 import { createClient } from "@/lib/supabase/server";
 import "./globals.css";
 
-// Dizajn-direkcija (Zara): IBM Plex Sans, jedna obitelj, Medium/SemiBold za
-// naslove i cijene, Regular za tijelo teksta. latin-ext je obavezan jer je
-// sučelje na hrvatskom (č/ć/š/ž/đ).
-const plexSans = IBM_Plex_Sans({
-  variable: "--font-plex-sans",
+// Fraunces (serif) samo za h1/display, Inter za sve ostalo. Oba su variable
+// fontovi (bez eksplicitne težine). latin-ext je obavezan jer je sučelje na
+// hrvatskom (č/ć/š/ž/đ).
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "600"],
+  display: "swap",
+});
+
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin", "latin-ext"],
+  axes: ["opsz"],
+  display: "swap",
 });
 
 const APP_URL = "https://tjedni-planer.vercel.app";
@@ -63,7 +70,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   } = await supabase.auth.getUser();
 
   return (
-    <html lang="hr" className={`${plexSans.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="hr" className={`${inter.variable} ${fraunces.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>

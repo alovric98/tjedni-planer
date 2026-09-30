@@ -20,7 +20,7 @@ export default async function ReceptiPage() {
   if (error) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-ink">Recepti</h1>
+        <h1 className="text-title text-ink">Recepti</h1>
         <p className="mt-2 text-warn">Greška kod dohvata recepata: {error.message}</p>
       </div>
     );
@@ -29,7 +29,7 @@ export default async function ReceptiPage() {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-ink">Recepti</h1>
+        <h1 className="text-title text-ink">Recepti</h1>
         <Link
           href="/recepti/novi"
           className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-accent-hover"

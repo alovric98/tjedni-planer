@@ -49,7 +49,7 @@ function round2(n: number): number {
 function ErrorState({ message }: { message: string }) {
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-ink">Košarica</h1>
+      <h1 className="text-title text-ink">Košarica</h1>
       <p className="mt-2 text-warn">Greška kod dohvata košarice: {message}</p>
     </div>
   );
@@ -81,7 +81,7 @@ export default async function KosaricaPage() {
   if (enabledStoreKeys.length === 0) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-ink">Košarica</h1>
+        <h1 className="text-title text-ink">Košarica</h1>
         <p className="mt-2 text-ink-muted">
           Nemaš odabranu nijednu trgovinu s live cijenama.{" "}
           <Link href="/onboarding" className="font-semibold text-accent-fg underline underline-offset-2">
@@ -103,7 +103,7 @@ export default async function KosaricaPage() {
   if (items.length === 0) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-ink">Košarica</h1>
+        <h1 className="text-title text-ink">Košarica</h1>
         <p className="mt-2 text-ink-muted">
           Nema sastojaka - odaberi recepte za tjedan na tabu &quot;Tjedni plan&quot;.
         </p>
@@ -149,7 +149,7 @@ export default async function KosaricaPage() {
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-ink">Košarica</h1>
+        <h1 className="text-title text-ink">Košarica</h1>
         <Link href="/onboarding" className="text-sm font-semibold text-ink-muted underline underline-offset-2">
           Uredi odabir trgovina
         </Link>

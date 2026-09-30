@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buttonClasses } from "@/components/ui/Button";
 
 export default function NotFound() {
   return (
@@ -20,14 +21,14 @@ export default function NotFound() {
         <path strokeLinecap="round" strokeLinejoin="round" d="M9.5 11.5l5 5m0-5-5 5" />
       </svg>
 
-      <h1 className="mt-6 text-2xl font-semibold tracking-tight text-ink">Stranica ne postoji</h1>
-      <p className="mt-2 max-w-sm text-base leading-relaxed text-ink-muted">
+      <h1 className="mt-6 text-title text-ink">Stranica ne postoji</h1>
+      <p className="mt-3 max-w-sm text-[0.9375rem] leading-relaxed text-ink-muted">
         Ova košarica je prazna — stranicu koju tražiš nismo pronašli.
       </p>
 
       <Link
         href="/recepti"
-        className="mt-8 flex min-h-12 items-center justify-center rounded-xl bg-accent px-6 py-3 text-base font-semibold text-white transition-colors duration-200 hover:bg-accent-hover"
+        className={`mt-8 ${buttonClasses({ size: "lg" })}`}
       >
         Natrag na recepte
       </Link>

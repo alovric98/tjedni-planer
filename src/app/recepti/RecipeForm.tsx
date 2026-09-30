@@ -2,16 +2,10 @@
 
 import { useActionState, useState } from "react";
 import { createRecipe, updateRecipe, type RecipeFormState } from "./actions";
+import { Button } from "@/components/ui/Button";
+import { Input, Select } from "@/components/ui/Input";
 
 const UNITS = ["g", "kg", "ml", "l", "kom"] as const;
-
-// Namjerno bez width/padding ovdje - te vrijednosti se razlikuju po polju
-// (naziv, količina, jedinica), a Tailwind ne garantira da će kasnija klasa u
-// stringu (npr. "w-20") pobijediti raniju ("w-full") po CSS specifičnosti,
-// pa ih dodajemo eksplicitno na svakom pozivu umjesto da se oslanjamo na
-// redoslijed u className stringu.
-const fieldClass =
-  "rounded-xl border-0 bg-surface-2 py-3 text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-accent";
 
 type IngredientRow = { key: string; name: string; quantity: string; unit: string };
 
@@ -64,36 +58,36 @@ export function RecipeForm({ mode, recipe }: RecipeFormProps) {
   return (
     <form action={formAction} className="space-y-6">
       <div>
-        <label className="block text-sm font-semibold text-ink" htmlFor="name">
+        <label className="block text-label font-semibold text-ink" htmlFor="name">
           Naziv recepta
         </label>
-        <input
+        <Input
           id="name"
           name="name"
           type="text"
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className={`mt-2 w-full px-4 ${fieldClass}`}
+          className="mt-2 w-full px-4"
         />
       </div>
 
       <div>
-        <span className="block text-sm font-semibold text-ink">Sastojci</span>
+        <span className="block text-label font-semibold text-ink">Sastojci</span>
         <div className="mt-2 space-y-3">
           {rows.map((row) => (
-            <div key={row.key} className="rounded-xl bg-surface-2 p-2.5 sm:flex sm:items-center sm:gap-2 sm:bg-transparent sm:p-0">
-              <input
+            <div key={row.key} className="rounded-surface border border-border bg-surface-2 p-2.5 sm:flex sm:items-center sm:gap-2 sm:border-0 sm:bg-transparent sm:p-0">
+              <Input
                 name="ingredient_name"
                 type="text"
                 placeholder="Naziv sastojka"
                 value={row.name}
                 autoFocus={row.key === justAddedKey}
                 onChange={(e) => updateRow(row.key, { name: e.target.value })}
-                className={`w-full min-w-0 px-4 sm:flex-1 ${fieldClass}`}
+                className="w-full min-w-0 px-4 sm:flex-1"
               />
               <div className="mt-2 flex gap-2 sm:mt-0 sm:contents">
-                <input
+                <Input
                   name="ingredient_quantity"
                   type="number"
                   step="any"
@@ -101,24 +95,24 @@ export function RecipeForm({ mode, recipe }: RecipeFormProps) {
                   placeholder="Kol."
                   value={row.quantity}
                   onChange={(e) => updateRow(row.key, { quantity: e.target.value })}
-                  className={`w-20 shrink-0 px-3 ${fieldClass}`}
+                  className="w-20 shrink-0 px-3"
                 />
-                <select
+                <Select
                   name="ingredient_unit"
                   value={row.unit}
                   onChange={(e) => updateRow(row.key, { unit: e.target.value })}
-                  className={`w-24 shrink-0 px-2 ${fieldClass}`}
+                  className="w-24 shrink-0 px-2"
                 >
                   {UNITS.map((u) => (
                     <option key={u} value={u}>
                       {u}
                     </option>
                   ))}
-                </select>
+                </Select>
                 <button
                   type="button"
                   onClick={() => removeRow(row.key)}
-                  className="flex min-h-12 w-9 shrink-0 items-center justify-center text-ink-muted hover:text-warn"
+                  className="flex min-h-11 w-9 shrink-0 items-center justify-center rounded-control text-ink-subtle transition-colors duration-150 hover:bg-warn-bg hover:text-warn"
                   aria-label="Makni sastojak"
                 >
                   ✕
@@ -127,20 +121,16 @@ export function RecipeForm({ mode, recipe }: RecipeFormProps) {
             </div>
           ))}
         </div>
-        <button type="button" onClick={addRow} className="mt-3 text-sm font-semibold text-ink">
+        <Button variant="ghost" onClick={addRow} className="mt-2 -ml-2">
           + Dodaj sastojak
-        </button>
+        </Button>
       </div>
 
-      {state.error && <p className="text-sm text-warn">{state.error}</p>}
+      {state.error && <p className="text-label text-warn">{state.error}</p>}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-accent-hover disabled:opacity-50"
-      >
+      <Button type="submit" loading={pending} size="lg">
         {mode === "create" ? "Spremi recept" : "Spremi izmjene"}
-      </button>
+      </Button>
     </form>
   );
 }

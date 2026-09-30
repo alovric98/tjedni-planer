@@ -42,7 +42,12 @@ function getServerSnapshot(): ThemePreference {
 
 function setTheme(value: ThemePreference) {
   localStorage.setItem("theme", value);
+  // Kratko uključi blagu tranziciju boja (vidi .theme-transition u
+  // globals.css) da promjena teme ne "škljocne".
+  const root = document.documentElement;
+  root.classList.add("theme-transition");
   applyTheme(value);
+  window.setTimeout(() => root.classList.remove("theme-transition"), 300);
   listeners.forEach((notify) => notify());
 }
 
@@ -70,7 +75,7 @@ export function ThemeSwitcher({ className = "" }: { className?: string }) {
     <div
       role="radiogroup"
       aria-label="Izgled"
-      className={`inline-flex gap-1 rounded-xl border border-border bg-surface-2 p-1 ${className}`}
+      className={`inline-flex gap-0.5 rounded-control border border-border bg-surface-2 p-0.5 ${className}`}
     >
       {OPTIONS.map((opt) => {
         const isActive = pref === opt.value;
@@ -81,8 +86,10 @@ export function ThemeSwitcher({ className = "" }: { className?: string }) {
             role="radio"
             aria-checked={isActive}
             onClick={() => handleSelect(opt.value)}
-            className={`min-h-10 flex-1 rounded-lg px-3 text-sm font-semibold transition-colors duration-200 ${
-              isActive ? "bg-accent text-white" : "text-ink-muted hover:bg-surface-1"
+            className={`min-h-10 flex-1 rounded-[0.5rem] px-3 text-label font-semibold transition-[background-color,color,box-shadow] duration-150 ${
+              isActive
+                ? "bg-surface-1 text-ink shadow-raised ring-1 ring-border-strong"
+                : "text-ink-muted hover:text-ink"
             }`}
           >
             {opt.label}

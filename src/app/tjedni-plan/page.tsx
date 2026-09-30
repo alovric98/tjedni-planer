@@ -34,7 +34,7 @@ export default async function TjedniPlanPage() {
   if (daysError || recipesError || !existingDays || !recipes) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-ink">Tjedni plan</h1>
+        <h1 className="text-title text-ink">Tjedni plan</h1>
         <p className="mt-2 text-warn">
           Greška kod dohvata podataka: {daysError?.message ?? recipesError?.message}
         </p>
@@ -54,7 +54,7 @@ export default async function TjedniPlanPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-ink">Tjedni plan</h1>
+      <h1 className="text-title text-ink">Tjedni plan</h1>
 
       <div className="mt-4 space-y-2.5">
         {days.map((day) => (

@@ -58,6 +58,15 @@ dashboardu):**
   netko trenutno ima aktivan popis na mobitelu, treba ga ili dovršiti prije
   ovog deploya ili prihvatiti da kreće ispočetka.
 
+**30.9.2026 - premium UI redizajn, Faza 1/3 gotova (nekomitano):** novi
+tokeni u `globals.css` (Fraunces h1 + Inter, surface-1/2/3, border-strong,
+radius-control/surface, shadow-raised/overlay, type skala `text-title/
+heading/label/micro`, zasebna dark paleta, reduced-motion), shared primitivi
+u `src/components/ui/` (Button, Input/Select, Badge), primijenjeni na login,
+onboarding, settings, RecipeForm, Toast, ThemeSwitcher. Preostalo: Faza 2
+(planner `DaySelect`/`tjedni-plan`), Faza 3 (AppHeader, TabNav, mobile,
+završni pass, ostali ekrani: recepti lista, košarica, ShoppingListGenerator).
+
 ## Live / pristup
 
 - App: https://tjedni-planer.vercel.app

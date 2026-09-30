@@ -8,9 +8,9 @@ export const metadata: Metadata = { title: "Postavke" };
 
 function SettingsSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="border-b border-border py-6 first:pt-0 last:border-b-0">
-      <h2 className="text-sm font-semibold tracking-tight text-ink-muted uppercase">{title}</h2>
-      <div className="mt-3">{children}</div>
+    <section className="border-b border-border py-7 first:pt-0 last:border-b-0">
+      <h2 className="text-micro font-semibold text-ink-subtle uppercase">{title}</h2>
+      <div className="mt-4">{children}</div>
     </section>
   );
 }
@@ -27,12 +27,12 @@ export default async function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-md">
-      <h1 className="text-2xl font-semibold tracking-tight text-ink">Postavke</h1>
+      <h1 className="text-title text-ink">Postavke</h1>
 
       <div className="mt-4">
         <SettingsSection title="Račun">
-          <p className="text-base text-ink">{user.email}</p>
-          <p className="mt-1 text-sm text-ink-muted">Prijava putem Googlea.</p>
+          <p className="text-[0.9375rem] font-medium text-ink">{user.email}</p>
+          <p className="mt-1 text-label text-ink-muted">Prijava putem Googlea.</p>
         </SettingsSection>
 
         <SettingsSection title="Izgled">
@@ -42,17 +42,17 @@ export default async function SettingsPage() {
         <SettingsSection title="Podaci">
           <Link
             href="/onboarding"
-            className="font-semibold text-accent-fg underline underline-offset-2"
+            className="text-label font-semibold text-accent-fg underline underline-offset-4 transition-colors duration-150 hover:text-ink"
           >
             Uredi odabir trgovina
           </Link>
         </SettingsSection>
 
         <SettingsSection title="O aplikaciji">
-          <p className="text-sm text-ink-muted">Verzija: MVP</p>
+          <p className="text-label text-ink-muted">Verzija: MVP</p>
           <Link
             href="/recepti"
-            className="mt-3 inline-block font-semibold text-accent-fg underline underline-offset-2"
+            className="mt-3 inline-block text-label font-semibold text-accent-fg underline underline-offset-4 transition-colors duration-150 hover:text-ink"
           >
             Natrag na recepte
           </Link>

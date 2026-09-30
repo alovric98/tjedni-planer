@@ -3,17 +3,15 @@
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import type { StoreOption } from "@/config/store-options";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="mt-4 flex min-h-12 w-full items-center justify-center rounded-xl bg-accent px-6 py-3 text-base font-semibold text-white transition-colors duration-200 hover:bg-accent-hover disabled:opacity-60"
-    >
+    <Button type="submit" loading={pending} size="lg" fullWidth className="mt-5">
       {pending ? "Spremam…" : "Spremi i nastavi"}
-    </button>
+    </Button>
   );
 }
 
@@ -52,14 +50,16 @@ export function StoreOnboardingForm({
   }
 
   return (
-    <form action={action} className="mt-6 space-y-2">
+    <form action={action} className="mt-8 space-y-2.5">
       {options.map((store) => {
         const isChecked = selected.has(store.key);
         return (
           <label
             key={store.key}
-            className={`flex min-h-12 items-center gap-3 rounded-xl border border-border bg-surface-1 px-4 py-3.5 transition-colors duration-200 ${
-              store.available ? "cursor-pointer" : "cursor-not-allowed opacity-50"
+            className={`flex min-h-14 items-center gap-3.5 rounded-surface border px-4 py-3.5 shadow-raised transition-[background-color,border-color] duration-150 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--ring)] ${
+              store.available
+                ? `cursor-pointer ${isChecked ? "border-accent bg-accent-soft" : "border-border bg-surface-1 hover:border-border-strong"}`
+                : "cursor-not-allowed border-border bg-surface-1 opacity-50"
             }`}
           >
             <input
@@ -72,15 +72,17 @@ export function StoreOnboardingForm({
             />
             <span
               aria-hidden="true"
-              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition-colors duration-200 ${
-                isChecked ? "border-accent bg-accent" : "border-border bg-surface-1"
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-[0.4375rem] border transition-[background-color,border-color,transform] duration-150 ${
+                isChecked ? "border-accent bg-accent" : "border-border-strong bg-surface-1"
               }`}
             >
               {isChecked && <CheckIcon />}
             </span>
-            <span className="text-lg font-semibold text-ink">{store.label}</span>
+            <span className="text-heading font-semibold text-ink">{store.label}</span>
             {!store.available && (
-              <span className="ml-auto text-xs font-medium text-ink-muted">uskoro</span>
+              <span className="ml-auto">
+                <Badge>uskoro</Badge>
+              </span>
             )}
           </label>
         );

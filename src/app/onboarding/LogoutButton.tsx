@@ -14,7 +14,7 @@ export function LogoutButton() {
   }
 
   return (
-    <button type="button" onClick={handleClick} className="text-sm font-semibold text-ink-muted underline underline-offset-2">
+    <button type="button" onClick={handleClick} className="text-label font-semibold text-ink-muted underline underline-offset-4 transition-colors duration-150 hover:text-ink">
       Odjava
     </button>
   );

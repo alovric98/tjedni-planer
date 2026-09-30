@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/Button";
 
 function GoogleIcon() {
   return (
@@ -47,17 +48,12 @@ export function LoginButton({ next }: { next?: string }) {
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={handleClick}
-        disabled={isPending}
-        className="flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-accent px-6 py-3 text-base font-semibold text-white transition-colors duration-200 hover:bg-accent-hover disabled:opacity-60"
-      >
-        <GoogleIcon />
+      <Button onClick={handleClick} loading={isPending} size="lg" fullWidth>
+        {!isPending && <GoogleIcon />}
         {isPending ? "Otvaram Google…" : "Nastavi s Google"}
-      </button>
+      </Button>
       {error && (
-        <p className="mt-3 rounded-lg bg-warn-bg px-3 py-2 text-sm text-warn">{error}</p>
+        <p className="mt-3 rounded-control bg-warn-bg px-3 py-2 text-label text-warn">{error}</p>
       )}
     </div>
   );

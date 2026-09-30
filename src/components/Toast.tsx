@@ -66,8 +66,9 @@ export function ToastHost() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed inset-x-4 bottom-24 z-40 rounded-xl border border-border bg-surface-1 px-4 py-3 text-center text-sm font-semibold text-ink shadow-[0_-2px_12px_rgba(27,36,32,0.10)] sm:inset-x-auto sm:left-1/2 sm:bottom-6 sm:w-auto sm:-translate-x-1/2"
+          className="animate-toast-in fixed inset-x-4 bottom-24 z-40 flex items-center justify-center gap-2.5 rounded-surface border border-border-strong bg-surface-1 px-4 py-3 text-label font-semibold text-ink shadow-overlay sm:inset-x-auto sm:bottom-6 sm:left-1/2 sm:w-auto sm:-translate-x-1/2"
         >
+          <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent-fg" />
           {message}
         </div>
       )}

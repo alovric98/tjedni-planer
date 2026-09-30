@@ -111,7 +111,9 @@ function wordScoreForLiteral(word: string, target: string): number {
 // "mlijeko" doslovno stoji u nazivu kozmetičkog proizvoda (audit N1). Kad
 // kategorija nedostaje (npr. nepotvrđeno Lidlovo polje, audit N19) ne
 // filtriramo - bolje propustiti kandidata na provjeru praga nego ga tiho
-// izgubiti zbog praznog polja.
+// izgubiti zbog praznog polja. Usporedba je bez obzira na velika/mala slova:
+// Kaufland šalje "HRANA", Lidl "Hrana" (inače bi svi Lidlovi proizvodi bili
+// filtrirani i Košarica bi prikazivala "cijena nedostupna").
 const FOOD_CATEGORIES = new Set(["HRANA", "PIĆE"]);
 
 /**
@@ -165,7 +167,7 @@ export function matchProductCandidates(index: ProductIndex, ingredientName: stri
   for (const entry of index) {
     if (wordScore(headWord, entry.normalizedName) === 0) continue;
     const category = entry.product.category;
-    if (category && !FOOD_CATEGORIES.has(category)) continue;
+    if (category && !FOOD_CATEGORIES.has(category.toUpperCase())) continue;
     const score = normalizedScore(queryWords, entry.normalizedName);
     if (score >= MIN_MATCH_SIMILARITY) candidates.push({ product: entry.product, score });
   }

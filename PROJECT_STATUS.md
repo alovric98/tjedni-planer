@@ -98,10 +98,15 @@ dashboardu):**
 4. **Kaufland CSV**: tab-delimited, UTF-8+BOM, `quote:false` u csv-parse
    (stvarni nazivi imaju doslovne navodnike koji bi inače pucali parsanje).
    URL je deterministički (datum + šifra poslovnice), ne treba scraping.
-5. **Lidl CSV**: unutar dnevnog ZIP-a (link se mora scrapati sa
-   `tvrtka.lidl.hr/cijene`, numerički ID u URL-u ZIP-a se mijenja svaki
-   dan), comma-delimited, **windows-1250** enkodiran (ne UTF-8!), treba
-   `stripBom` prije dekodiranja jer BOM bajtovi kao cp1250 daju smeće.
+5. **Lidl CSV**: pojedinačni dnevni CSV PO POSLOVNICI (nema više ZIP-a) -
+   link se scrapa sa `www.lidl.hr/c/cijene/s10073252` (stranica ima
+   povijest svih poslovnica, filtrira se po datumu + `LIDL_STORE_MATCH`),
+   comma-delimited, **windows-1250** enkodiran (ne UTF-8!). Kategorije su
+   u formatu "Hrana"/"Piće" (Kaufland: "HRANA"/"PIĆE") - `matching.ts`
+   uspoređuje kategoriju bez obzira na velika/mala slova; bez toga bi se
+   svi Lidlovi proizvodi filtrirali i Košarica bi za Lidl prikazivala
+   "cijena nedostupna" (bug pronađen 30.9.2026, cron i baza su radili
+   ispravno).
 6. **`products` tablica se puni DELETE+INSERT svaki dan**, ne upsert - unique
    constraint na `(store,code,barcode)` je uklonjen migracijom
    `0002_drop_products_unique.sql` jer izvorni cjenici imaju prave

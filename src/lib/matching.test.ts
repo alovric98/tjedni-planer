@@ -12,6 +12,16 @@ describe("matchProductCandidates - prag pouzdanosti + kategorijski filtar (FIX 1
     expect(candidates.map((c) => c.product.id)).toEqual(["2"]);
   });
 
+  it("kategorija se uspoređuje bez obzira na velika/mala slova (Lidl 'Hrana'/'Piće' naspram Kauflandovog 'HRANA'/'PIĆE')", () => {
+    const index = buildProductIndex([
+      testProduct({ id: "1", name: "Dukat trajno mlijeko 1L", price: 0.99, category: "Hrana" }),
+      testProduct({ id: "2", name: "Kokos mlijeko piće 1L", price: 1.99, category: "Piće" }),
+      testProduct({ id: "3", name: "Nivea mlijeko za tijelo 400 ml", price: 12.39, category: "Kozmetika" }),
+    ]);
+    const candidates = matchProductCandidates(index, "mlijeko");
+    expect(candidates.map((c) => c.product.id).sort()).toEqual(["1", "2"]);
+  });
+
   it("ne baca kandidata s nepoznatom kategorijom (ne može se provjeriti, pa se ne odbacuje)", () => {
     const index = buildProductIndex([testProduct({ id: "1", name: "Svježe mlijeko 1L", price: 1.1, category: null })]);
     expect(matchProductCandidates(index, "mlijeko")).toHaveLength(1);

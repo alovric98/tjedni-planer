@@ -39,18 +39,24 @@ export type Database = {
         Row: {
           user_id: string
           store_key: string
+          branch_key: string | null
+          branch_label: string | null
           enabled: boolean
           created_at: string
         }
         Insert: {
           user_id: string
           store_key: string
+          branch_key?: string | null
+          branch_label?: string | null
           enabled?: boolean
           created_at?: string
         }
         Update: {
           user_id?: string
           store_key?: string
+          branch_key?: string | null
+          branch_label?: string | null
           enabled?: boolean
           created_at?: string
         }

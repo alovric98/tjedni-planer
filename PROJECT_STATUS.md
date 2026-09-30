@@ -85,6 +85,10 @@ završni pass, ostali ekrani: recepti lista, košarica, ShoppingListGenerator).
   jednom dnevno u 9h, zaštićeno `CRON_SECRET` Bearer headerom
 - Reprezentativna poslovnica: **Slavonski Brod** za oba lanca
   (`src/config/stores.ts` - promijeni ondje za drugu poslovnicu)
+- Korisnik u onboardingu bira i poslovnicu po trgovini (`user_stores.branch_key`
+  / `branch_label`, migracija `0005`; popis iz javnih cjenika u
+  `src/lib/price-fetch/branches.ts`). **Faza 2 (nije napravljeno):** cron i
+  Košarica još uvijek koriste samo poslovnicu iz `stores.ts`, ne korisnikovu.
 
 ## Ključne tehničke odluke (bitno prije diranja koda)
 

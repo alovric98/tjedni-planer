@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { STORE_OPTIONS } from "@/config/store-options";
 
 export const metadata: Metadata = { title: "Postavke" };
 
@@ -25,6 +26,12 @@ export default async function SettingsPage() {
     redirect("/login");
   }
 
+  const { data: userStores } = await supabase
+    .from("user_stores")
+    .select("store_key, branch_label")
+    .eq("user_id", user.id)
+    .eq("enabled", true);
+
   return (
     <div className="mx-auto max-w-md">
       <h1 className="text-title text-ink">Postavke</h1>
@@ -40,6 +47,19 @@ export default async function SettingsPage() {
         </SettingsSection>
 
         <SettingsSection title="Podaci">
+          {userStores && userStores.length > 0 && (
+            <ul className="mb-3 space-y-1.5">
+              {userStores.map((s) => (
+                <li key={s.store_key} className="text-label text-ink-muted">
+                  <span className="font-semibold text-ink">
+                    {STORE_OPTIONS.find((o) => o.key === s.store_key)?.label ?? s.store_key}
+                  </span>
+                  {" - "}
+                  {s.branch_label ?? "poslovnica nije odabrana"}
+                </li>
+              ))}
+            </ul>
+          )}
           <Link
             href="/onboarding"
             className="text-label font-semibold text-accent-fg underline underline-offset-4 transition-colors duration-150 hover:text-ink"

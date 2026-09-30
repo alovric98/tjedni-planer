@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useId, useState, useTransition } from "react";
 import { formatQuantity } from "@/lib/format";
 import { showToast } from "@/components/Toast";
+import { Button } from "@/components/ui/Button";
 import {
   getActiveList,
   getArchivedLists,
@@ -10,6 +11,22 @@ import {
   toggleListItem,
   type PersistedList,
 } from "./list-actions";
+
+function CheckMark({ draw = false }: { draw?: boolean }) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4" aria-hidden="true">
+      <path
+        d="M3.5 8.5 6.5 11.5 12.5 4.5"
+        pathLength={1}
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={draw ? "animate-check-draw" : ""}
+      />
+    </svg>
+  );
+}
 
 /**
  * Popis za kupovinu - trajno spremljen u Supabase po korisniku (prije je
@@ -33,38 +50,47 @@ function ShoppingListRow({
   onToggle: () => void;
 }) {
   return (
-    <label
-      className={`flex min-h-12 cursor-pointer items-center gap-3 px-4 py-3.5 transition-opacity duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-        isChecked ? "opacity-[0.45]" : "opacity-100"
-      } ${isPending ? "pointer-events-none" : ""}`}
-    >
-      <input
-        type="checkbox"
-        checked={isChecked}
-        onChange={onToggle}
-        className="sr-only"
-        aria-label={`Označi "${item.name}" kao kupljeno`}
-      />
-      <span
-        aria-hidden="true"
-        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition-colors duration-200 ${
-          isChecked ? "border-accent bg-accent" : "border-border bg-surface-1"
+    <li>
+      <label
+        className={`group flex min-h-14 cursor-pointer items-center gap-3.5 px-4 py-3 transition-colors duration-150 hover:bg-surface-2/60 ${
+          isPending ? "pointer-events-none" : ""
         }`}
       >
-        {isChecked && (
-          <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4" aria-hidden="true">
-            <path d="M3.5 8.5 6.5 11.5 12.5 4.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        )}
-      </span>
-      <span
-        className={`text-lg font-semibold text-ink transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          isChecked ? "line-through" : ""
-        }`}
-      >
-        {item.name} — {formatQuantity(item.quantity)} {item.unit}
-      </span>
-    </label>
+        <input
+          type="checkbox"
+          checked={isChecked}
+          onChange={onToggle}
+          className="peer sr-only"
+          aria-label={`Označi "${item.name}" kao kupljeno`}
+        />
+        <span
+          aria-hidden="true"
+          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-[0.4375rem] border-[1.5px] transition-[background-color,border-color,transform] duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-active:scale-90 peer-focus-visible:ring-[3px] peer-focus-visible:ring-accent/40 ${
+            isChecked
+              ? "border-accent bg-accent text-white"
+              : "border-border-strong bg-surface-1 group-hover:border-accent"
+          }`}
+        >
+          {isChecked && <CheckMark draw />}
+        </span>
+        <span
+          className={`min-w-0 flex-1 text-heading line-through decoration-1 transition-[color,text-decoration-color] duration-200 ${
+            isChecked
+              ? "font-normal text-ink-muted decoration-ink-muted"
+              : "font-medium text-ink decoration-transparent"
+          }`}
+        >
+          {item.name}
+        </span>
+        <span
+          className={`shrink-0 text-label tabular-nums transition-colors duration-200 ${
+            isChecked ? "text-ink-muted" : "font-semibold text-ink-muted"
+          }`}
+        >
+          {formatQuantity(item.quantity)} {item.unit}
+        </span>
+      </label>
+    </li>
   );
 }
 
@@ -81,41 +107,82 @@ function pluralStavki(n: number): string {
 
 function ArchivedListCard({ list }: { list: PersistedList }) {
   const [open, setOpen] = useState(false);
+  const panelId = useId();
   const date = list.archivedAt
     ? new Date(list.archivedAt).toLocaleDateString("hr-HR", { day: "numeric", month: "long", year: "numeric" })
     : "";
 
   return (
-    <div className="rounded-xl border border-border bg-surface-1">
+    <div className="rounded-surface border border-border bg-surface-1">
       <button
         type="button"
+        aria-expanded={open}
+        aria-controls={panelId}
         onClick={() => setOpen((v) => !v)}
-        className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-3.5 text-left"
+        className="group flex min-h-14 w-full items-center justify-between gap-3 rounded-surface px-4 py-3 text-left transition-colors duration-150 hover:bg-surface-2/60 active:bg-surface-2"
       >
-        <span className="text-sm font-semibold text-ink-muted">
-          Dovršeno {date} · {list.items.length} {pluralStavki(list.items.length)}
+        <span className="min-w-0">
+          <span className="block text-label font-semibold text-ink">{date}</span>
+          <span className="block text-label text-ink-muted">
+            {list.items.length} {pluralStavki(list.items.length)} · dovršeno
+          </span>
         </span>
-        <span className="text-xs font-semibold text-ink-muted">{open ? "Sakrij" : "Prikaži"}</span>
+        <svg
+          viewBox="0 0 16 16"
+          fill="none"
+          className={`h-4 w-4 shrink-0 text-ink-subtle transition-transform duration-200 ease-out ${open ? "rotate-180" : ""}`}
+          aria-hidden="true"
+        >
+          <path d="m4 6.5 4 4 4-4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </button>
-      {open && (
-        <div className="divide-y divide-border border-t border-border">
-          {list.items.map((item) => (
-            <div key={item.id} className="flex min-h-12 items-center gap-3 px-4 py-3.5 opacity-[0.45]">
+      {/* grid-rows 0fr→1fr animira visinu bez mjerenja; `inert` sakriva zatvoreni sadržaj od čitača. */}
+      <div
+        id={panelId}
+        inert={!open}
+        className={`grid transition-[grid-template-rows] duration-200 ease-out ${
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        }`}
+      >
+        <ul className="min-h-0 divide-y divide-border overflow-hidden">
+          {list.items.map((item, i) => (
+            <li
+              key={item.id}
+              className={`flex min-h-12 items-center gap-3 px-4 py-2.5 ${i === 0 ? "border-t border-border" : ""}`}
+            >
               <span
                 aria-hidden="true"
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-accent bg-accent"
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent-fg"
               >
-                <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4" aria-hidden="true">
-                  <path d="M3.5 8.5 6.5 11.5 12.5 4.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                <span className="scale-[0.8]">
+                  <CheckMark />
+                </span>
               </span>
-              <span className="text-lg font-semibold text-ink line-through">
-                {item.name} — {formatQuantity(item.quantity)} {item.unit}
+              <span className="min-w-0 flex-1 text-label text-ink-muted">{item.name}</span>
+              <span className="shrink-0 text-label tabular-nums text-ink-muted">
+                {formatQuantity(item.quantity)} {item.unit}
               </span>
-            </div>
+            </li>
           ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function ListSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-label="Učitavam popis"
+      className="mt-3 divide-y divide-border rounded-surface border border-border bg-surface-1"
+    >
+      {[70, 52, 62, 44].map((w) => (
+        <div key={w} className="flex min-h-14 animate-pulse items-center gap-3.5 px-4">
+          <span className="h-6 w-6 shrink-0 rounded-[0.4375rem] bg-surface-2" />
+          <span className="h-3.5 rounded bg-surface-2" style={{ width: `${w}%` }} />
         </div>
-      )}
+      ))}
     </div>
   );
 }
@@ -125,6 +192,7 @@ export function ShoppingListGenerator() {
   const [archivedLists, setArchivedLists] = useState<PersistedList[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pendingItemId, setPendingItemId] = useState<string | null>(null);
+  const [justCompleted, setJustCompleted] = useState(false);
   const [isGenerating, startGenerating] = useTransition();
 
   useEffect(() => {
@@ -133,11 +201,15 @@ export function ShoppingListGenerator() {
         setActiveList(active);
         setArchivedLists(archived);
       })
-      .catch((e) => setError(e instanceof Error ? e.message : "Greška kod učitavanja popisa."));
+      .catch((e) => {
+        setActiveList(null);
+        setError(e instanceof Error ? e.message : "Greška kod učitavanja popisa.");
+      });
   }, []);
 
   function handleGenerate() {
     setError(null);
+    setJustCompleted(false);
     startGenerating(async () => {
       try {
         const list = await regenerateActiveList();
@@ -164,6 +236,7 @@ export function ShoppingListGenerator() {
       const result = await toggleListItem(itemId);
       setActiveList(result.list);
       if (result.archived) {
+        setJustCompleted(true);
         const [freshArchived] = await Promise.all([getArchivedLists()]);
         setArchivedLists(freshArchived);
       }
@@ -181,44 +254,110 @@ export function ShoppingListGenerator() {
   }
 
   const isLoading = activeList === undefined;
+  const items = activeList?.items ?? [];
+  const checkedCount = items.filter((i) => i.checked).length;
+  const progress = items.length > 0 ? Math.round((checkedCount / items.length) * 100) : 0;
 
   return (
-    <div className="border-t border-border pt-6">
-      <button
-        type="button"
-        disabled={isGenerating}
-        onClick={handleGenerate}
-        className="w-full rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-accent-hover disabled:opacity-50 sm:w-auto"
-      >
-        {isGenerating ? "Generiram…" : activeList ? "Ponovno generiraj popis" : "Generiraj popis za kupovinu"}
-      </button>
+    <section aria-labelledby="shopping-heading">
+      <div className="flex items-center justify-between gap-3">
+        <h2 id="shopping-heading" className="text-heading font-semibold text-ink">
+          Popis za kupovinu
+        </h2>
+        {activeList && (
+          <Button variant="secondary" loading={isGenerating} onClick={handleGenerate}>
+            {isGenerating ? "Generiram…" : "Ponovno generiraj"}
+          </Button>
+        )}
+      </div>
 
-      {error && <p className="mt-2 text-sm text-warn">{error}</p>}
+      {error && (
+        <p
+          role="alert"
+          className="mt-3 rounded-surface border border-warn/30 bg-warn-bg px-4 py-3 text-label font-medium text-warn"
+        >
+          {error}
+        </p>
+      )}
+
+      {isLoading && !error && <ListSkeleton />}
+
+      {/* Nema aktivnog popisa: poziv na akciju. */}
+      {!isLoading && !activeList && !justCompleted && (
+        <div className="mt-3 rounded-surface border border-dashed border-border-strong px-4 py-5">
+          <p className="text-label text-ink-muted">
+            Sastavi popis iz recepata koje si odabrao/la za ovaj tjedan. Iste sastojke zbrojimo u jednu stavku.
+          </p>
+          <Button className="mt-4" size="lg" fullWidth loading={isGenerating} onClick={handleGenerate}>
+            {isGenerating ? "Generiram…" : "Generiraj popis za kupovinu"}
+          </Button>
+        </div>
+      )}
+
+      {/* Sve stavke označene: popis je upravo arhiviran. */}
+      {!isLoading && !activeList && justCompleted && (
+        <div className="animate-pop-in mt-3 rounded-surface border border-accent/30 bg-accent-soft px-4 py-5">
+          <div className="flex items-start gap-3.5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-white">
+              <CheckMark draw />
+            </span>
+            <div>
+              <p role="status" className="text-heading font-semibold text-ink">
+                Sve je kupljeno
+              </p>
+              <p className="mt-0.5 text-label text-ink-muted">Popis je spremljen među prijašnje liste.</p>
+            </div>
+          </div>
+          <Button className="mt-4" variant="secondary" fullWidth loading={isGenerating} onClick={handleGenerate}>
+            {isGenerating ? "Generiram…" : "Generiraj novi popis"}
+          </Button>
+        </div>
+      )}
 
       {!isLoading && activeList && (
-        <div className="mt-4">
-          <h2 className="text-sm font-semibold text-ink-muted">Popis za kupovinu</h2>
-          {activeList.items.length === 0 ? (
-            <p className="mt-2 text-sm text-ink-muted">Nema odabranih recepata za tjedan.</p>
+        <div className="mt-3 overflow-hidden rounded-surface border border-border bg-surface-1 shadow-raised">
+          {items.length === 0 ? (
+            <p className="px-4 py-5 text-label text-ink-muted">
+              Nema odabranih recepata za tjedan. Odaberi recepte u planu i ponovno generiraj popis.
+            </p>
           ) : (
-            <div className="mt-2 divide-y divide-border rounded-xl border border-border bg-surface-1">
-              {activeList.items.map((item) => (
-                <ShoppingListRow
-                  key={item.id}
-                  item={item}
-                  isChecked={item.checked}
-                  isPending={pendingItemId === item.id}
-                  onToggle={() => handleToggle(item.id)}
-                />
-              ))}
-            </div>
+            <>
+              <div className="border-b border-border px-4 py-3">
+                <p aria-live="polite" className="flex items-baseline justify-between text-label text-ink-muted">
+                  <span>
+                    Kupljeno{" "}
+                    <span className="font-semibold tabular-nums text-ink">
+                      {checkedCount} od {items.length}
+                    </span>
+                  </span>
+                  <span className="tabular-nums">{progress}%</span>
+                </p>
+                <div aria-hidden="true" className="mt-2 h-1 overflow-hidden rounded-full bg-surface-3">
+                  <div
+                    className="h-full rounded-full bg-accent transition-[width] duration-300 ease-out"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+              <ul className="divide-y divide-border lg:max-h-[calc(100dvh-16rem)] lg:overflow-y-auto">
+                {items.map((item) => (
+                  <ShoppingListRow
+                    key={item.id}
+                    item={item}
+                    isChecked={item.checked}
+                    isPending={pendingItemId === item.id}
+                    onToggle={() => handleToggle(item.id)}
+                  />
+                ))}
+              </ul>
+            </>
           )}
         </div>
       )}
 
       {archivedLists.length > 0 && (
-        <div className="mt-6">
-          <h2 className="text-sm font-semibold text-ink-muted">Prijašnje liste</h2>
+        <div className="mt-8">
+          <h2 className="text-label font-semibold text-ink-muted">Prijašnje liste</h2>
           <div className="mt-2 space-y-2">
             {archivedLists.map((list) => (
               <ArchivedListCard key={list.id} list={list} />
@@ -226,6 +365,6 @@ export function ShoppingListGenerator() {
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }

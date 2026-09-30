@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requireUser } from "@/lib/supabase/server";
 import { DaySelect } from "./DaySelect";
 import { ShoppingListGenerator } from "./ShoppingListGenerator";
+import { formatWeekRange, getCurrentWeek } from "./week";
 
 export const metadata: Metadata = { title: "Tjedni plan" };
 
@@ -33,9 +34,9 @@ export default async function TjedniPlanPage() {
 
   if (daysError || recipesError || !existingDays || !recipes) {
     return (
-      <div>
+      <div className="mx-auto w-full max-w-2xl">
         <h1 className="text-title text-ink">Tjedni plan</h1>
-        <p className="mt-2 text-warn">
+        <p role="alert" className="mt-3 rounded-surface border border-warn/30 bg-warn-bg px-4 py-3 text-label text-warn">
           Greška kod dohvata podataka: {daysError?.message ?? recipesError?.message}
         </p>
       </div>
@@ -47,29 +48,51 @@ export default async function TjedniPlanPage() {
   // pripremljenih globalnih redaka) - nedostajući dani se prikazuju kao
   // prazan odabir.
   const recipeIdByDay = new Map(existingDays.map((d) => [d.day_of_week, d.recipe_id]));
-  const days = DAY_LABELS.map((_, i) => {
-    const dayOfWeek = i + 1;
-    return { day_of_week: dayOfWeek, recipe_id: recipeIdByDay.get(dayOfWeek) ?? null };
+  const recipeIds = new Set(recipes.map((r) => r.id));
+  const week = getCurrentWeek();
+  const days = week.map((day) => {
+    const recipeId = recipeIdByDay.get(day.dayOfWeek) ?? null;
+    // Obrisan recept (ili onaj kojeg korisnik ne vidi) tretira se kao prazan dan.
+    return { ...day, recipeId: recipeId && recipeIds.has(recipeId) ? recipeId : null };
   });
+  const plannedCount = days.filter((d) => d.recipeId !== null).length;
 
   return (
-    <div>
-      <h1 className="text-title text-ink">Tjedni plan</h1>
+    <div className="mx-auto w-full max-w-2xl lg:max-w-5xl">
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_23rem] lg:items-start lg:gap-10">
+        <section aria-labelledby="plan-heading">
+          <header>
+            <h1 id="plan-heading" className="text-title text-ink">
+              Tjedni plan
+            </h1>
+            <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-label text-ink-muted">
+              <span className="font-semibold text-ink">{formatWeekRange(week)}</span>
+              <span aria-hidden="true">·</span>
+              <span>
+                {plannedCount} od 7 dana planirano
+              </span>
+            </p>
+          </header>
 
-      <div className="mt-4 space-y-2.5">
-        {days.map((day) => (
-          <DaySelect
-            key={`${day.day_of_week}:${day.recipe_id ?? "none"}`}
-            dayOfWeek={day.day_of_week}
-            label={DAY_LABELS[day.day_of_week - 1]}
-            selectedRecipeId={day.recipe_id}
-            recipes={recipes}
-          />
-        ))}
-      </div>
+          <ul className="mt-4 divide-y divide-border rounded-surface border border-border bg-surface-1 shadow-raised">
+            {days.map((day) => (
+              <DaySelect
+                key={day.dayOfWeek}
+                dayOfWeek={day.dayOfWeek}
+                label={DAY_LABELS[day.dayOfWeek - 1]}
+                shortLabel={day.shortLabel}
+                dayOfMonth={day.dayOfMonth}
+                isToday={day.isToday}
+                selectedRecipeId={day.recipeId}
+                recipes={recipes}
+              />
+            ))}
+          </ul>
+        </section>
 
-      <div className="mt-6">
-        <ShoppingListGenerator />
+        <div className="mt-8 lg:sticky lg:top-[4.5rem] lg:mt-0">
+          <ShoppingListGenerator />
+        </div>
       </div>
     </div>
   );

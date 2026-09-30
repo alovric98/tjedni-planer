@@ -16,6 +16,12 @@ function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
+// Supabase stores the session in "sb-<ref>-auth-token" (or ".0", ".1" when the
+// cookie is chunked).
+function hasAuthCookie(request: NextRequest): boolean {
+  return request.cookies.getAll().some((c) => c.name.startsWith("sb-") && c.name.includes("-auth-token"));
+}
+
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -55,7 +61,12 @@ export async function updateSession(request: NextRequest) {
     if (isPublicPath(pathname)) return response;
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
-    loginUrl.searchParams.set("next", pathname);
+    loginUrl.search = "";
+    loginUrl.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
+    // A session cookie exists but is no longer valid -> expired session (not
+    // a first visit), so the login screen shows "session expired" instead of
+    // the welcome copy.
+    if (hasAuthCookie(request)) loginUrl.searchParams.set("expired", "1");
     return NextResponse.redirect(loginUrl);
   }
 

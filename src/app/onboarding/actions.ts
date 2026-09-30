@@ -14,6 +14,15 @@ export async function saveStoreSelection(formData: FormData) {
     redirect("/login");
   }
 
+  // The "Welcome" screen is only for the first completion - later store
+  // changes go straight back into the app.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("onboarding_completed")
+    .eq("id", user.id)
+    .maybeSingle();
+  const isFirstTime = !profile?.onboarding_completed;
+
   const selected = STORE_OPTIONS.filter(
     (s) => s.available && formData.get(s.key) === "on"
   ).map((s) => s.key as StoreKey);
@@ -44,5 +53,5 @@ export async function saveStoreSelection(formData: FormData) {
     redirect("/onboarding?error=save");
   }
 
-  redirect("/recepti");
+  redirect(isFirstTime ? "/onboarding/done" : "/recepti");
 }

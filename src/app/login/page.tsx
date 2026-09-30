@@ -6,9 +6,10 @@ export const metadata: Metadata = { title: "Prijava" };
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; error?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; expired?: string }>;
 }) {
-  const { next, error } = await searchParams;
+  const { next, error, expired } = await searchParams;
+  const isExpired = expired === "1";
 
   return (
     <div className="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center px-4 sm:min-h-[70vh]">
@@ -31,8 +32,23 @@ export default async function LoginPage({
 
         <h1 className="mt-6 text-title text-ink">Tjedni planer</h1>
         <p className="mt-3 text-[0.9375rem] leading-relaxed text-ink-muted">
-          Prijavi se da spremiš svoje trgovine i popise za kupovinu.
+          {isExpired
+            ? "Sesija je istekla. Prijavi se ponovno - tvoji recepti, plan i popisi su sačuvani."
+            : "Isplaniraj ručkove za tjedan i usporedi cijene u trgovinama."}
         </p>
+
+        {!isExpired && (
+          <ul className="mx-auto mt-6 max-w-[15rem] space-y-2 text-left text-label text-ink-muted">
+            {["Dodaj recepte i rasporedi ih po danima", "Automatski popis za kupovinu", "Jeftinija košarica: Lidl ili Kaufland"].map(
+              (line) => (
+                <li key={line} className="flex items-start gap-2.5">
+                  <span aria-hidden="true" className="mt-[0.4375rem] h-1.5 w-1.5 shrink-0 rounded-full bg-accent-fg" />
+                  {line}
+                </li>
+              )
+            )}
+          </ul>
+        )}
 
         {error && (
           <p className="mt-6 rounded-control bg-warn-bg px-3 py-2 text-label text-warn">
@@ -41,7 +57,7 @@ export default async function LoginPage({
         )}
 
         <div className="mt-8">
-          <LoginButton next={next} />
+          <LoginButton next={next} expired={isExpired} />
         </div>
       </div>
     </div>

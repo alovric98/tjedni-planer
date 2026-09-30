@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
+import { buttonClasses } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { CalendarIcon, PlusIcon } from "@/components/ui/icons";
 import { DaySelect } from "./DaySelect";
 import { ShoppingListGenerator } from "./ShoppingListGenerator";
 import { formatWeekRange, getCurrentWeek } from "./week";
@@ -39,6 +43,30 @@ export default async function TjedniPlanPage() {
         <p role="alert" className="mt-3 rounded-surface border border-warn/30 bg-warn-bg px-4 py-3 text-label text-warn">
           Greška kod dohvata podataka: {daysError?.message ?? recipesError?.message}
         </p>
+      </div>
+    );
+  }
+
+  // New user: nothing to plan yet, so point at the first step instead of
+  // showing seven empty days.
+  if (recipes.length === 0) {
+    return (
+      <div className="mx-auto w-full max-w-2xl">
+        <h1 className="text-title text-ink">Tjedni plan</h1>
+        <div className="mt-6">
+          <EmptyState
+            icon={<CalendarIcon className="h-6 w-6" />}
+            title="Prvo dodaj recept"
+            action={
+              <Link href="/recepti/novi" className={buttonClasses({ size: "lg" })}>
+                <PlusIcon />
+                Dodaj prvi recept
+              </Link>
+            }
+          >
+            Kad imaš barem jedan recept, rasporedi ga po danima i dobit ćeš popis za kupovinu.
+          </EmptyState>
+        </div>
       </div>
     );
   }

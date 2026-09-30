@@ -21,3 +21,9 @@ export function formatMeasure(q: number, basis: string): string {
   if (q < 1) return `${Math.round(q * 1000)} ${basis === "l" ? "ml" : "g"}`;
   return formatBasisQuantity(q, basis);
 }
+
+/** First name from a full name ("Ana Horvat" -> "Ana"); null when there is none. */
+export function firstName(fullName: string | null | undefined): string | null {
+  const first = fullName?.trim().split(/\s+/)[0];
+  return first ? first : null;
+}

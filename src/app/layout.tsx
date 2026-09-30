@@ -3,6 +3,8 @@ import { Fraunces, Inter } from "next/font/google";
 import { MobileTabBar } from "@/components/TabNav";
 import { AppHeader } from "@/components/AppHeader";
 import { ToastHost } from "@/components/Toast";
+import { WelcomeBack } from "@/components/WelcomeBack";
+import { firstName } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import "./globals.css";
 
@@ -91,6 +93,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           }
         />
         <ToastHost />
+        {user && <WelcomeBack name={firstName(user.user_metadata?.full_name as string | undefined)} />}
         <main className="flex-1 px-4 pt-6 pb-[calc(var(--nav-offset)+1.5rem)]">
           <div className="mx-auto w-full max-w-5xl">{children}</div>
         </main>

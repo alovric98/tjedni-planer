@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { createRecipe, updateRecipe, type RecipeFormState } from "./actions";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
+import { clearFlag, readFlag, RELOGIN_FLAG } from "@/lib/session-flags";
 
 const UNITS = ["g", "kg", "ml", "l", "kom"] as const;
 
@@ -24,6 +25,12 @@ type RecipeFormProps = {
 
 const initialState: RecipeFormState = {};
 
+type Draft = { name: string; rows: IngredientRow[] };
+
+function draftKey(mode: string, id?: string) {
+  return `tjedni-planer:recipe-draft:${mode}:${id ?? "new"}`;
+}
+
 export function RecipeForm({ mode, recipe }: RecipeFormProps) {
   const action = mode === "edit" && recipe ? updateRecipe.bind(null, recipe.id) : createRecipe;
   const [state, formAction, pending] = useActionState(action, initialState);
@@ -41,6 +48,31 @@ export function RecipeForm({ mode, recipe }: RecipeFormProps) {
   );
   const [justAddedKey, setJustAddedKey] = useState<string | null>(null);
 
+  // The draft is written on every submit attempt. If the session has expired
+  // the request is redirected to /login and this page is lost; after the
+  // re-login (RELOGIN_FLAG set by the login screen) the draft is restored.
+  // Without the flag a leftover draft is stale (the save succeeded), so drop it.
+  const storageKey = draftKey(mode, recipe?.id);
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(storageKey);
+      if (raw && readFlag(RELOGIN_FLAG)) {
+        const draft = JSON.parse(raw) as Draft;
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore after mount (sessionStorage is client-only)
+        setName(draft.name);
+        if (draft.rows.length > 0) setRows(draft.rows);
+      }
+      sessionStorage.removeItem(storageKey);
+    } catch {}
+    clearFlag(RELOGIN_FLAG);
+  }, [storageKey]);
+
+  function saveDraft() {
+    try {
+      sessionStorage.setItem(storageKey, JSON.stringify({ name, rows } satisfies Draft));
+    } catch {}
+  }
+
   function updateRow(key: string, patch: Partial<IngredientRow>) {
     setRows((rows) => rows.map((r) => (r.key === key ? { ...r, ...patch } : r)));
   }
@@ -56,7 +88,7 @@ export function RecipeForm({ mode, recipe }: RecipeFormProps) {
   }
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form action={formAction} onSubmit={saveDraft} className="space-y-6">
       <div>
         <label className="block text-label font-semibold text-ink" htmlFor="name">
           Naziv recepta

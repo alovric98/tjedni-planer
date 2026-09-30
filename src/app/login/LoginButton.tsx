@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { setFlag, RELOGIN_FLAG } from "@/lib/session-flags";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 
@@ -24,9 +25,16 @@ function GoogleIcon() {
   );
 }
 
-export function LoginButton({ next }: { next?: string }) {
+export function LoginButton({ next, expired }: { next?: string; expired?: boolean }) {
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Mark that we are returning after an expired session - RecipeForm only
+  // restores an unsaved draft in that case (see session-flags).
+  useEffect(() => {
+    if (!expired) return;
+    setFlag(RELOGIN_FLAG);
+  }, [expired]);
 
   async function handleClick() {
     setError(null);
@@ -50,7 +58,7 @@ export function LoginButton({ next }: { next?: string }) {
     <div>
       <Button onClick={handleClick} loading={isPending} size="lg" fullWidth>
         {!isPending && <GoogleIcon />}
-        {isPending ? "Otvaram Google…" : "Nastavi s Google"}
+        {isPending ? "Otvaram Google…" : expired ? "Prijavi se ponovno" : "Nastavi s Google"}
       </Button>
       {error && (
         <p className="mt-3 rounded-control bg-warn-bg px-3 py-2 text-label text-warn">{error}</p>

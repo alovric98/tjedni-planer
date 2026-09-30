@@ -1,10 +1,22 @@
-import JSZip from "jszip";
 import { parse } from "csv-parse/sync";
 import { LIDL_STORE_MATCH } from "@/config/stores";
-import { parseNumber, stripBom } from "./parse-utils";
+import { parseNumber } from "./parse-utils";
 import type { ParsedProduct, UnitBasis } from "./types";
 
-const LIST_PAGE_URL = "https://tvrtka.lidl.hr/cijene";
+// Lidlova stara /cijene stranica (tvrtka.lidl.hr) je prestala raditi - link
+// za dnevni ZIP je nestao (audit N4). Zamjena, potvrđena uživo 30.09.2026:
+// www.lidl.hr/c/cijene/s10073252 je zakonom propisana (NN 75/2025) stranica
+// s dnevnim cjenicima PO POSLOVNICI kao pojedinačni CSV-ovi (isti obrazac
+// transparentnosti cijena kao i Kaufland), format datoteke:
+// "Supermarket <broj>_<ulica>_<kbr>_<pošt.br>_<grad>_<kod>_DD.MM.YYYY_H.MMh.csv".
+const LIST_PAGE_URL = "https://www.lidl.hr/c/cijene/s10073252";
+
+// Hvata svaki <a href="/explore/assets/webPriceData/hr/...csv"> link na
+// stranici i izvlači datum iz imena datoteke (uvijek na kraju, prije
+// vremena objave). Stranica prikazuje POVIJEST zadnjih nekoliko tjedana za
+// SVE poslovnice odjednom, pa se filtrira i po datumu i po poslovnici.
+const CSV_LINK_PATTERN =
+  /href="(\/explore\/assets\/webPriceData\/hr\/[^"]+?_(\d{2})\.(\d{2})\.(\d{4})_\d{1,2}\.\d{2}h\.csv)"/g;
 
 function classifyUnitBasis(raw: string | undefined): UnitBasis | null {
   if (!raw) return null;
@@ -21,7 +33,7 @@ function classifyUnitBasis(raw: string | undefined): UnitBasis | null {
   return null;
 }
 
-async function findTodaysZipUrl(date: Date): Promise<string> {
+async function findTodaysCsvUrl(date: Date): Promise<string> {
   const res = await fetch(LIST_PAGE_URL);
   if (!res.ok) {
     throw new Error(`Lidl stranica s cjenicima nedostupna (HTTP ${res.status})`);
@@ -30,35 +42,30 @@ async function findTodaysZipUrl(date: Date): Promise<string> {
 
   const dd = String(date.getDate()).padStart(2, "0");
   const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const yyyy = date.getFullYear();
+  const yyyy = String(date.getFullYear());
 
-  const pattern = new RegExp(
-    `https://tvrtka\\.lidl\\.hr/content/download/\\d+/fileupload/Popis_cijena_po_trgovinama_na_dan_${dd}_${mm}_${yyyy}\\.zip`
-  );
-  const match = html.match(pattern);
-  if (!match) {
-    throw new Error(`Nije pronađen link za današnji Lidl cjenik (${dd}.${mm}.${yyyy}.)`);
+  CSV_LINK_PATTERN.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = CSV_LINK_PATTERN.exec(html))) {
+    const [, href, linkDd, linkMm, linkYyyy] = match;
+    if (linkDd === dd && linkMm === mm && linkYyyy === yyyy && href.includes(LIDL_STORE_MATCH)) {
+      return new URL(href, LIST_PAGE_URL).toString();
+    }
   }
-  return match[0];
+  throw new Error(
+    `Nije pronađen link za današnji Lidl cjenik (${dd}.${mm}.${yyyy}.) za poslovnicu "${LIDL_STORE_MATCH}"`
+  );
 }
 
 export async function fetchLidlProducts(date: Date = new Date()): Promise<ParsedProduct[]> {
-  const zipUrl = await findTodaysZipUrl(date);
+  const csvUrl = await findTodaysCsvUrl(date);
 
-  const zipRes = await fetch(zipUrl);
-  if (!zipRes.ok) {
-    throw new Error(`Preuzimanje Lidl ZIP-a nije uspjelo (HTTP ${zipRes.status})`);
+  const csvRes = await fetch(csvUrl);
+  if (!csvRes.ok) {
+    throw new Error(`Preuzimanje Lidl cjenika nije uspjelo (HTTP ${csvRes.status})`);
   }
-  const zipBuffer = await zipRes.arrayBuffer();
-
-  const zip = await JSZip.loadAsync(zipBuffer);
-  const entryName = Object.keys(zip.files).find((name) => name.includes(LIDL_STORE_MATCH));
-  if (!entryName) {
-    throw new Error(`Nije pronađena poslovnica "${LIDL_STORE_MATCH}" u Lidl ZIP-u`);
-  }
-
-  const entryBuffer = await zip.files[entryName].async("arraybuffer");
-  const text = new TextDecoder("windows-1250").decode(stripBom(entryBuffer));
+  const buffer = await csvRes.arrayBuffer();
+  const text = new TextDecoder("windows-1250").decode(buffer);
 
   const rows: string[][] = parse(text, {
     delimiter: ",",
@@ -73,7 +80,11 @@ export async function fetchLidlProducts(date: Date = new Date()): Promise<Parsed
 
   for (const row of dataRows) {
     const name = row[0]?.trim();
-    const price = parseNumber(row[6]) ?? parseNumber(row[5]);
+    // MALOPRODAJNA_CIJENA (redovna cijena) - ista kolona kao Kauflandova
+    // "maloprod.cijena(EUR)" (kaufland.ts row[5]), NE promotivna
+    // MPC_ZA_VRIJEME_POSEBNOG_OBLIKA_PRODAJE - da usporedba Lidl/Kaufland
+    // bude na istoj osnovi (obje trgovine redovna cijena, ne akcijska).
+    const price = parseNumber(row[5]);
     if (!name || price === null) continue;
 
     products.push({

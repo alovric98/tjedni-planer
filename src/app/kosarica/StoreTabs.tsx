@@ -1,74 +1,8 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { formatQuantity, formatBasisQuantity } from "@/lib/format";
-import { normalize } from "@/lib/normalize";
 import type { BasketLineResult, PartPriceResult } from "@/lib/pricing";
-
-// Stanje "u košarici" (koja je stavka već fizički stavljena u košaru u
-// dućanu) je dijeljeno između Lidl/Kaufland tabova (ista fizička stavka,
-// samo druga cijena) i preživljava navigaciju između ekrana unutar sesije.
-// localStorage je "vanjski store" izvan Reacta - useSyncExternalStore je
-// hidracijski siguran način čitanja (bez window na serveru), za razliku od
-// setState u useEffectu koji bi izazvao dvostruki render.
-const CHECKED_STORAGE_KEY = "tjedni-planer:kosarica-checked";
-let checkedListeners: Array<() => void> = [];
-// Cache u memoriji - i dalje vrijedi izvor istine za ovu sesiju čak i kad
-// localStorage.setItem baci grešku (privatni način rada i sl.), pa toggle
-// ostaje pouzdan i bez uspješne perzistencije.
-let cachedChecked: string | null = null;
-
-function notifyCheckedChanged() {
-  for (const listener of checkedListeners) listener();
-}
-
-function subscribeChecked(listener: () => void) {
-  checkedListeners.push(listener);
-  return () => {
-    checkedListeners = checkedListeners.filter((l) => l !== listener);
-  };
-}
-
-function getCheckedSnapshot(): string {
-  if (cachedChecked !== null) return cachedChecked;
-  try {
-    cachedChecked = window.localStorage.getItem(CHECKED_STORAGE_KEY) ?? "[]";
-  } catch {
-    cachedChecked = "[]";
-  }
-  return cachedChecked;
-}
-
-function getCheckedServerSnapshot(): string {
-  return "[]";
-}
-
-function useCheckedItems() {
-  const raw = useSyncExternalStore(subscribeChecked, getCheckedSnapshot, getCheckedServerSnapshot);
-  const checked = useMemo(() => {
-    try {
-      return new Set<string>(JSON.parse(raw));
-    } catch {
-      return new Set<string>();
-    }
-  }, [raw]);
-
-  function toggle(key: string) {
-    const next = new Set(checked);
-    if (next.has(key)) next.delete(key);
-    else next.add(key);
-    const serialized = JSON.stringify(Array.from(next));
-    cachedChecked = serialized;
-    try {
-      window.localStorage.setItem(CHECKED_STORAGE_KEY, serialized);
-    } catch {
-      // localStorage nedostupan (privatni način rada i sl.) - stanje ostaje u memoriji (cachedChecked) za ovu sesiju
-    }
-    notifyCheckedChanged();
-  }
-
-  return { checked, toggle };
-}
 
 export type StoreBasket = {
   rows: BasketLineResult[];
@@ -148,56 +82,19 @@ function PartPurchaseLine({ part }: { part: PartPriceResult }) {
 }
 
 /**
- * Jedan redak popisa za kupovinu - klik/tap bilo gdje na retku pali "u
- * košarici": checkbox se puni accent-zelenom, naziv dobiva line-through,
- * cijeli redak pada na opacity 0.45. Redak NE nestaje i NE kolabira - samo
- * mijenja stanje, ostaje na mjestu da se lako odznači (dizajn-direkcija:
- * hairline linija umjesto kartice-sa-sjenom, jedini accent na retku je
- * ispunjeni checkbox).
+ * Jedan redak popisa - Košarica je isključivo za usporedbu cijena
+ * (read-only), tap-to-strike checklist interakcija živi na "Tjedni plan"
+ * ekranu (ShoppingListGenerator.tsx), gdje se koristi u dućanu.
  */
-function BasketRow({
-  row,
-  isChecked,
-  onToggle,
-}: {
-  row: BasketLineResult;
-  isChecked: boolean;
-  onToggle: () => void;
-}) {
+function BasketRow({ row }: { row: BasketLineResult }) {
   const chosenPart = row.chosenPartIndex !== null ? row.parts[row.chosenPartIndex] : null;
 
   return (
-    <label
-      className={`flex min-h-12 cursor-pointer items-start gap-3 py-4 transition-opacity duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-        isChecked ? "opacity-[0.45]" : "opacity-100"
-      }`}
-    >
-      <input
-        type="checkbox"
-        checked={isChecked}
-        onChange={onToggle}
-        className="sr-only"
-        aria-label={`Označi "${row.ingredient}" kao stavljeno u košaricu`}
-      />
-      <span
-        aria-hidden="true"
-        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition-colors duration-200 ${
-          isChecked ? "border-accent bg-accent" : "border-border bg-surface-1"
-        }`}
-      >
-        {isChecked && (
-          <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
-            <path d="M3.5 8.5 6.5 11.5 12.5 4.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        )}
-      </span>
-
+    <div className="flex min-h-12 items-start gap-3 py-4">
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className={`font-semibold text-ink transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${isChecked ? "line-through" : ""}`}>
-              {row.ingredient}
-            </p>
+            <p className="font-semibold text-ink">{row.ingredient}</p>
             {row.mode === "single" && chosenPart?.matchedName && (
               <p className="mt-0.5 truncate text-sm text-ink-muted">{chosenPart.matchedName}</p>
             )}
@@ -239,7 +136,7 @@ function BasketRow({
           chosenPart && <PartPurchaseLine part={chosenPart} />
         )}
       </div>
-    </label>
+    </div>
   );
 }
 
@@ -258,25 +155,14 @@ function StaleBanner({ store, basket }: { store: keyof typeof STORE_LABEL; baske
   );
 }
 
-function BasketView({
-  store,
-  basket,
-  checked,
-  onToggle,
-}: {
-  store: keyof typeof STORE_LABEL;
-  basket: StoreBasket;
-  checked: Set<string>;
-  onToggle: (key: string) => void;
-}) {
+function BasketView({ store, basket }: { store: keyof typeof STORE_LABEL; basket: StoreBasket }) {
   return (
     <div>
       <StaleBanner store={store} basket={basket} />
       <div className="divide-y divide-border">
-        {basket.rows.map((row, i) => {
-          const key = normalize(row.ingredient);
-          return <BasketRow key={i} row={row} isChecked={checked.has(key)} onToggle={() => onToggle(key)} />;
-        })}
+        {basket.rows.map((row, i) => (
+          <BasketRow key={i} row={row} />
+        ))}
       </div>
     </div>
   );
@@ -304,7 +190,7 @@ function CompareBar({ lidl, kaufland }: { lidl: StoreBasket; kaufland: StoreBask
   const diff = Math.abs(lidl.total - kaufland.total);
 
   return (
-    <div className="sticky bottom-20 z-20 mt-4 rounded-2xl border border-border bg-surface-1 p-4 shadow-[0_-2px_12px_rgba(27,36,32,0.10)] sm:bottom-4">
+    <div className="sticky bottom-24 z-20 mt-4 rounded-2xl border border-border bg-surface-1 p-4 shadow-[0_-2px_12px_rgba(27,36,32,0.10)] sm:bottom-4">
       <div className="grid grid-cols-2 gap-3">
         <StoreTotalColumn name="Lidl" basket={lidl} isCheaper={lidlCheaper} />
         <StoreTotalColumn name="Kaufland" basket={kaufland} isCheaper={kauflandCheaper} />
@@ -346,7 +232,6 @@ function StoreTotalColumn({ name, basket, isCheaper }: { name: string; basket: S
 
 export function StoreTabs({ lidl, kaufland }: { lidl: StoreBasket; kaufland: StoreBasket }) {
   const [store, setStore] = useState<"lidl" | "kaufland">("lidl");
-  const { checked, toggle } = useCheckedItems();
 
   return (
     <div className="mt-4">
@@ -372,12 +257,7 @@ export function StoreTabs({ lidl, kaufland }: { lidl: StoreBasket; kaufland: Sto
       </div>
 
       <div className="mt-4">
-        <BasketView
-          store={store}
-          basket={store === "lidl" ? lidl : kaufland}
-          checked={checked}
-          onToggle={toggle}
-        />
+        <BasketView store={store} basket={store === "lidl" ? lidl : kaufland} />
       </div>
 
       <CompareBar lidl={lidl} kaufland={kaufland} />

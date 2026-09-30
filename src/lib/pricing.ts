@@ -69,9 +69,11 @@ export function basisForUnit(unit: string): UnitBasis | null {
 // ---------------------------------------------------------------------------
 
 // Izričita veličina u nazivu: "500 g", "1kg", "0,75L", "6 kom", "4x125g", "6/1".
-const EXPLICIT_SIZE = /\d\s?(?:g|kg|dag|ml|cl|dl|l)\b|\d\s?kom\b|\d\s?x\s?\d|\d+\s?\/\s?1\b/i;
-// Izričite oznake da je cijena po kg, a ne po pakiranju ("rinfuza", "cca 500g").
-const LOOSE_CUE = /rinfuz|\bcca\b|\bca\./i;
+// Iza jedinice se ne traži \b nego "nije slovo": nazivi poput "1 kg_OC" ili
+// "cca600g" imaju podvlaku/broj uz jedinicu, što \b ne smatra granicom riječi.
+const EXPLICIT_SIZE = /\d\s?(?:g|kg|dag|ml|cl|dl|l)(?![a-z])|\d\s?kom(?![a-z])|\d\s?x\s?\d|\d+\s?\/\s?1(?!\d)/i;
+// Izričite oznake da je cijena po kg, a ne po pakiranju ("rinfuza", "cca 500g", "cca600g").
+const LOOSE_CUE = /rinfuz|\bcca(?![a-z])|\bca\./i;
 
 /**
  * `net_quantity` je u stvarnim cjenicima uvijek MASA u kg, čak i za tekućine
@@ -79,7 +81,7 @@ const LOOSE_CUE = /rinfuz|\bcca\b|\bca\./i;
  * izričitu veličinu iz naziva; masa je samo fallback (gustoća ~1).
  */
 function volumeFromName(name: string): number | null {
-  const m = name.match(/(\d+(?:[.,]\d+)?)\s*(ml|cl|dl|l)\b/i);
+  const m = name.match(/(\d+(?:[.,]\d+)?)\s*(ml|cl|dl|l)(?![a-z])/i);
   if (!m) return null;
   const value = Number(m[1].replace(",", "."));
   const unit = m[2].toLowerCase();
@@ -93,7 +95,7 @@ function volumeFromName(name: string): number | null {
  * pakiranja u kg (audit N8 - npr. jaja "6/1" imaju net_quantity=0.39).
  */
 function packageCountFromName(name: string): number | null {
-  const slash = name.match(/(\d+)\s*\/\s*1\b/);
+  const slash = name.match(/(\d+)\s*\/\s*1(?!\d)/);
   if (slash) return Number(slash[1]);
   const kom = name.match(/(\d+)\s*kom/i);
   if (kom) return Number(kom[1]);
@@ -142,12 +144,25 @@ type LooseOffer = {
 
 type Offer = PackOffer | LooseOffer;
 
-// Pakiranja unutar ovog faktora najmanje veličine smatraju se "istom
-// veličinom" (npr. 20 g i 17 g začina, 0,458 l i 0,5 l ulja) pa među njima
-// odlučuje cijena. Bez tolerancije bi nebitna razlika u gramima odlučivala o proizvodu.
-const SIZE_TIER_FACTOR = 1.1;
+// Među pakiranjima do ovog višekratnika najmanje veličine koja pokriva
+// potrebu odlučuje cijena (npr. 20 g i 17 g začina, 250 ml i 458 ml ulja -
+// veće pakiranje je često jeftinije od premium malog). Veće od toga se ne
+// bira jer bi značilo kupiti puno više nego što treba.
+const SIZE_TIER_FACTOR = 2;
 
-function buildOffers(products: ProductForMatching[], basis: UnitBasis, need: number, looseOk: boolean): Offer[] {
+/**
+ * `curated` = sastojak ima ručno pravilo. Tada pravilo jamči da proizvod nije
+ * na vagu (`looseOk: false`), pa `net_quantity = 1` bez veličine u nazivu
+ * ("Riža dugozrnata 5% loma") je pravo pakiranje od 1 kg. Bez pravila to
+ * ostaje nejasno i proizvod se preskače.
+ */
+function buildOffers(
+  products: ProductForMatching[],
+  basis: UnitBasis,
+  need: number,
+  looseOk: boolean,
+  curated: boolean
+): Offer[] {
   const offers: Offer[] = [];
   for (const product of products) {
     if (!(product.price > 0)) continue;
@@ -158,7 +173,7 @@ function buildOffers(products: ProductForMatching[], basis: UnitBasis, need: num
     }
     // Veličinu pakiranja koju ne možemo pouzdano odrediti ne nagađamo -
     // proizvod se preskače (cjenik s nejasnim "1" i bez veličine u nazivu).
-    if (product.net_quantity === 1 && !EXPLICIT_SIZE.test(product.name)) continue;
+    if (product.net_quantity === 1 && !EXPLICIT_SIZE.test(product.name) && !(curated && !looseOk)) continue;
 
     const packSize = packSizeOf(product, basis);
     if (packSize === null) continue;
@@ -243,7 +258,7 @@ export function priceIngredientPart(
   const need = convertToBasis(quantity, unit, basis);
   if (need === null) return unavailable(name, 0, estimated);
 
-  const offers = buildOffers(productsForIngredient(index, name, rule), basis, need, rule?.looseOk ?? false);
+  const offers = buildOffers(productsForIngredient(index, name, rule), basis, need, rule?.looseOk ?? false, !estimated);
   if (offers.length === 0) return unavailable(name, 0, estimated);
 
   const loose = offers.filter((o): o is LooseOffer => o.kind === "loose");
@@ -314,6 +329,61 @@ export function splitCompoundIngredientName(name: string): { parts: string[]; mo
   if (andParts.length > 1) return { parts: andParts, mode: "and" };
 
   return { parts: [name], mode: "single" };
+}
+
+// ---------------------------------------------------------------------------
+// Spajanje sinonima prije cijenjenja
+// ---------------------------------------------------------------------------
+
+type MergeableItem = { name: string; quantity: number; unit: string };
+
+/**
+ * Popis za kupovinu spaja samo ISTE nazive, pa sinonimi iz različitih
+ * recepata ostaju zasebni retci ("Papar" 5 g + "Biber" 10 g, "Piletina"
+ * 500 g + "Pileća prsa" 500 g) i svaki bi kupio vlastito pakiranje. Retci
+ * koje pokriva isto pravilo spajaju se u jedan (količine u istoj osnovi se
+ * zbrajaju) i prikazuju pod nazivom pravila. Sastojci bez pravila i retci
+ * koji se ne mogu spojiti (nespojive jedinice) ostaju netaknuti.
+ */
+export function mergeItemsByRule<T extends MergeableItem>(items: T[], ruleFor: RuleResolver): T[] {
+  type Group = { rule: PricingRule; basis: UnitBasis; members: T[] };
+  const groups = new Map<string, Group>();
+  const result: Array<T | Group> = [];
+
+  for (const item of items) {
+    const rule = ruleFor(item.name);
+    const basis = basisForUnit(item.unit);
+    if (!rule || !basis) {
+      result.push(item);
+      continue;
+    }
+    const key = `${rule.key}|${basis}`;
+    let group = groups.get(key);
+    if (!group) {
+      group = { rule, basis, members: [] };
+      groups.set(key, group);
+      result.push(group);
+    }
+    group.members.push(item);
+  }
+
+  return result.map((entry) => {
+    if (!("members" in entry)) return entry;
+    const { rule, basis, members } = entry;
+    const distinctNames = new Set(members.map((m) => m.name.trim().toLowerCase()));
+    const distinctUnits = new Set(members.map((m) => m.unit));
+    if (members.length === 1) return members[0];
+    if (distinctNames.size === 1 && distinctUnits.size === 1) return members[0]; // već spojeno u popisu
+
+    if (basis === "kom") {
+      const quantity = members.reduce((sum, m) => sum + m.quantity, 0);
+      return { ...members[0], name: rule.label, quantity };
+    }
+    // g+kg / ml+l: zbroji u najmanjoj jedinici (g/ml) da nema izmjena preciznosti.
+    const smallUnit = basis === "kg" ? "g" : "ml";
+    const quantity = members.reduce((sum, m) => sum + (convertToBasis(m.quantity, m.unit, basis) ?? 0) * 1000, 0);
+    return { ...members[0], name: rule.label, quantity: Math.round(quantity * 1000) / 1000, unit: smallUnit };
+  });
 }
 
 // ---------------------------------------------------------------------------

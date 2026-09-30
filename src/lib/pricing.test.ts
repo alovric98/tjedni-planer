@@ -49,11 +49,11 @@ describe("priceIngredientPart - cijela pakiranja, nikad proporcija ili prosjek",
     }
   });
 
-  it("među pakiranjima iste veličine bira najjeftinije", () => {
+  it("među pakiranjima do 2x najmanje veličine bira najjeftinije, veća od toga ne", () => {
     const index = buildProductIndex([
-      product("Papar crni Brand A 20 g", 1.09, 0.02),
+      product("Papar crni Brand A 17 g", 1.49, 0.017),
       product("KLC.Papar crni mljeveni 20g", 0.46, 0.02),
-      product("Papar crni Brand B 50 g", 0.3, 0.05), // veće pakiranje, jeftinije, ali se ne bira
+      product("Papar crni Brand B 100 g", 0.3, 0.1), // 100 g > 2 x 17 g - preveliko, ne bira se
     ]);
     const r = priceIngredientPart(index, "papar", 15, "g", pepperRule);
     expect(r.itemPrice).toBe(0.46);
@@ -99,9 +99,28 @@ describe("priceIngredientPart - nepouzdani podaci ne postaju izmišljena cijena"
     expect(priceIngredientPart(index, "papar", 5, "g", rule({ include: /papar/ })).itemPrice).toBeNull();
   });
 
-  it("nejasni 'net_quantity = 1' bez veličine u nazivu nije pakiranje od 1 kg (Vegeta bez looseOk)", () => {
+  it("nejasni 'net_quantity = 1' bez veličine u nazivu, bez pravila, se preskače (nije siguran 1 kg)", () => {
     const index = buildProductIndex([product("Vegeta Univerzalni začin", 5.79, 1)]);
-    expect(priceIngredientPart(index, "vegeta", 15, "g", rule({ include: /vegeta/ })).itemPrice).toBeNull();
+    expect(priceIngredientPart(index, "vegeta", 15, "g").itemPrice).toBeNull();
+  });
+
+  it("uz pravilo koje kaže da nije na vagu, 'net_quantity = 1' bez veličine je pakiranje od 1 kg", () => {
+    const index = buildProductIndex([product("Riža dugozrnata 5% loma", 1.59, 1)]);
+    const r = priceIngredientPart(index, "riža", 300, "g", rule({ include: /riza/ }));
+    expect(r.purchase).toMatchObject({ soldByWeight: false, packCount: 1, packSize: 1 });
+    expect(r.itemPrice).toBe(1.59);
+  });
+
+  it("oznake uz jedinicu ('1 kg_OC', 'cca600g') se prepoznaju", () => {
+    const index = buildProductIndex([
+      product("KLC.Riža dugog zrna 1 kg_OC", 1.59, 1),
+      product("KPur. Pileća prsa s kož i kost cca600g", 5.99, 1),
+    ]);
+    const rice = priceIngredientPart(index, "riža", 300, "g", rule({ include: /riza/ }));
+    expect(rice.purchase).toMatchObject({ soldByWeight: false, packSize: 1 });
+    const chicken = priceIngredientPart(index, "pileća prsa", 500, "g", rule({ include: /prsa/ }));
+    expect(chicken.purchase?.soldByWeight).toBe(true);
+    expect(chicken.itemPrice).toBe(3);
   });
 
   it("nepodržana mjerna jedinica -> nedostupno", () => {

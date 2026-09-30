@@ -3,7 +3,8 @@ import Link from "next/link";
 import { generateShoppingList, type ShoppingListItem } from "../tjedni-plan/actions";
 import { getAllProducts } from "@/lib/products";
 import { buildProductIndex } from "@/lib/matching";
-import { priceShoppingItem, type BasketLineResult } from "@/lib/pricing";
+import { mergeItemsByRule, priceShoppingItem, type BasketLineResult } from "@/lib/pricing";
+import { findIngredientRule } from "@/config/ingredient-rules";
 import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase/server";
 import { STORE_OPTIONS, type StoreKey } from "@/config/store-options";
@@ -34,7 +35,9 @@ async function buildBasket(store: "lidl" | "kaufland", items: ShoppingListItem[]
   const products = await getAllProducts(store);
   const index = buildProductIndex(products);
 
-  const rows: BasketLineResult[] = items.map((item) => priceShoppingItem(index, item));
+  const rows: BasketLineResult[] = mergeItemsByRule(items, findIngredientRule).map((item) =>
+    priceShoppingItem(index, item, findIngredientRule)
+  );
 
   const pricedRows = rows.filter((r) => r.totalPrice !== null);
   const total = round2(pricedRows.reduce((sum, r) => sum + (r.totalPrice ?? 0), 0));

@@ -96,11 +96,33 @@ završni pass, ostali ekrani: recepti lista, košarica, ShoppingListGenerator).
    "mljevena junetina" da pogodi "mljevena kava"), zagrade u nazivu sastojka
    ("(konzerva)", "(light)") se ignoriraju za matching (opisne napomene, ne
    dio naziva proizvoda).
-2. **Cijena u Košarici = cijela pakiranja, ne proporcija.** Ne može se
-   kupiti pola pakiranja tjestenine - računa se `ceil(potrebno/net_quantity)
-   × cijena_pakiranja`, s "× N" oznakom kad treba više paketa. "~" prefiks
-   znači da nemamo dovoljno podataka (pouzdanu veličinu pakiranja + kg/l
-   bazu) pa se prikazuje cijena jednog pakiranja kao gruba procjena.
+2. **Cijena u Košarici = cijela pakiranja jednog stvarnog proizvoda, nikad
+   prosjek ni proporcija** (prepisano 30.9.2026; stara logika - prosjek €/kg
+   svih fuzzy pogodaka × sintetička "kupovna količina" - davala je npr.
+   0,44 € za 25 g papra i 26,55 € za 2,5 kg piletine). `src/lib/pricing.ts`:
+   trošak = `ceil(potrebno / veličina pakiranja) × cijena pakiranja`;
+   bira se najmanja veličina koja JEDNIM pakiranjem pokriva potrebu, a
+   unutar 2× te veličine najjeftiniji proizvod; ako nijedno ne pokriva,
+   N istih pakiranja. Višak se prikazuje. Izuzetak: artikli na vagu
+   (Lidl "rinfuza", "cca", Kaufland "_OC"/bez veličine u nazivu, samo za
+   sastojke s `looseOk`) računaju se proporcionalno po kg; samo sirovo meso
+   (`mode: "average"`) uzima prosjek €/kg varijanti. Veličina pakiranja se
+   nikad ne nagađa - bez pouzdanog podatka "cijena nedostupna".
+   Veličina: `net_quantity` (masa, kg); za volumen iz naziva ("500 ml")
+   jer je `net_quantity` uvijek masa; komadi iz naziva ("10/1").
+   `net_quantity = 1` je dvosmislen (pravi 1 kg ili cijena po kg) - vidi
+   `isSoldByWeight`. `unit_price` se više NE koristi (u cjeniku je mjestimice
+   pogrešan, npr. Lidl papar 14 g ima unit_price = cijena pakiranja).
+   **Ručna pravila po sastojku** (`src/config/ingredient-rules.ts`): regex
+   include/exclude nad nazivom proizvoda, sinonimi (Papar/Biber,
+   Piletina/Pileća prsa), `mode`, `looseOk`. Retci koje pokriva isto pravilo
+   spajaju se prije cijenjenja (`mergeItemsByRule`). Sastojak bez pravila
+   ide generičkim uparivanjem (`matchPrimaryCandidates`) i u UI-u je
+   "procjena". Golden testovi nad snapshotom stvarnog kataloga:
+   `src/config/ingredient-rules.test.ts` + `src/lib/__fixtures__/` (nakon
+   promjene pravila regenerirati fixture - vidi `note` u JSON-u). Nova
+   pravila dodavati tek uz stvaran primjer iz recepta i provjeru nad
+   katalogom.
 3. **g↔ml aproksimacija gustoće ~1** za tekuće/pasirane namirnice unesene u
    gramima (npr. "pasirana rajčica" 500g → tretira se kao 0.5L ako je
    proizvod cjenovno baziran na litri).

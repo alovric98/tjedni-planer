@@ -1,0 +1,162 @@
+import { describe, it, expect } from "vitest";
+import lidlCatalog from "@/lib/__fixtures__/catalog-lidl.json";
+import kauflandCatalog from "@/lib/__fixtures__/catalog-kaufland.json";
+import { buildProductIndex } from "@/lib/matching";
+import { mergeItemsByRule, priceShoppingItem, type BasketLineResult } from "@/lib/pricing";
+import type { ProductForMatching } from "@/lib/products";
+import { findIngredientRule } from "@/config/ingredient-rules";
+
+// Stvarni retci iz recepata (query na recipe_ingredients, 30.9.2026).
+const RECIPE_ROWS = [
+  { name: "Biber", unit: "g", quantity: 10 },
+  { name: "Cvjetača", unit: "g", quantity: 250 },
+  { name: "Grašak", unit: "g", quantity: 200 },
+  { name: "Luk", unit: "g", quantity: 100 },
+  { name: "Maslinovo ulje", unit: "ml", quantity: 40 },
+  { name: "Mrkva", unit: "g", quantity: 200 },
+  { name: "Papar", unit: "g", quantity: 5 },
+  { name: "Peršin", unit: "g", quantity: 150 },
+  { name: "Pileća prsa", unit: "g", quantity: 500 },
+  { name: "Piletina", unit: "g", quantity: 500 },
+  { name: "Riza", unit: "g", quantity: 250 },
+  { name: "Riža", unit: "g", quantity: 300 },
+  { name: "Sampinjoni", unit: "g", quantity: 200 },
+  { name: "Sol", unit: "g", quantity: 10 },
+  { name: "Vegeta", unit: "g", quantity: 15 },
+];
+
+function toProducts(catalog: { products: Omit<ProductForMatching, "id">[] }): ProductForMatching[] {
+  return catalog.products.map((p, i) => ({ ...p, id: String(i) }));
+}
+
+function basket(catalog: { products: Omit<ProductForMatching, "id">[] }): Map<string, BasketLineResult> {
+  const index = buildProductIndex(toProducts(catalog));
+  const rows = mergeItemsByRule(RECIPE_ROWS, findIngredientRule).map((item) =>
+    priceShoppingItem(index, item, findIngredientRule)
+  );
+  return new Map(rows.map((r) => [r.ingredient, r]));
+}
+
+// Očekivane cijene su provjerene ručno nad stvarnim katalogom (30.9.2026),
+// po pravilu: najmanje pakiranje koje pokriva potrebu, najjeftinije unutar
+// 2x te veličine; na vagu samo gdje pravilo dopušta; prosjek samo za prsa.
+const EXPECTED: Record<"lidl" | "kaufland", Record<string, number>> = {
+  lidl: {
+    Papar: 1.29, // Mljeveni crni papar 50 g (prije 0,44 € za "0,03 kg")
+    Cvjetača: 1.99,
+    Grašak: 0.85,
+    Luk: 0.08, // rinfuza 0,79 €/kg x 100 g (prije prosjek 19 proizvoda)
+    "Maslinovo ulje": 4.49,
+    Mrkva: 1.29, // Mrkva 1 kg (prije 1,42 € iz prosjeka s tortom i kolačem)
+    Peršin: 1.29,
+    "Pileća prsa": 6.52, // prosjek 6 varijanti svježih prsa/filea, 1 kg (Piletina + Pileća prsa spojeno)
+    Riža: 1.59, // Riža + Riza spojeno: 550 g -> 1 kg
+    Sampinjoni: 1.29, // naziv kako piše u receptu (bez dijakritika)
+    Sol: 0.35,
+    Vegeta: 1.19, // stvarno pakiranje od 75 g (prije 0,57 € proporcionalno)
+  },
+  kaufland: {
+    Papar: 0.46, // KLC Papar crni mljeveni 20 g (Papar + Biber = 15 g)
+    Cvjetača: 0.5,
+    Grašak: 1.29,
+    Luk: 0.07,
+    "Maslinovo ulje": 4.49,
+    Mrkva: 0.18,
+    Peršin: 2.49,
+    "Pileća prsa": 6.59,
+    Riža: 1.59,
+    Sampinjoni: 0.7,
+    Sol: 0.49,
+    Vegeta: 1.09,
+  },
+};
+
+describe.each([
+  ["lidl", lidlCatalog],
+  ["kaufland", kauflandCatalog],
+] as const)("golden košarica - %s (stvarni katalog 30.9.2026)", (store, catalog) => {
+  const rows = basket(catalog);
+
+  it("sinonimi iz recepata su spojeni u jedan redak po sastojku", () => {
+    expect([...rows.keys()].sort()).toEqual(Object.keys(EXPECTED[store]).sort());
+  });
+
+  it.each(Object.entries(EXPECTED[store]))("%s -> %s €", (ingredient, price) => {
+    expect(rows.get(ingredient)?.totalPrice).toBe(price);
+  });
+
+  it("nijedan sastojak nije generička procjena ni nedostupan", () => {
+    for (const row of rows.values()) {
+      expect(row.totalPrice, row.ingredient).not.toBeNull();
+      expect(row.parts[0].estimated, row.ingredient).toBe(false);
+    }
+  });
+
+  it("cijela pakiranja: kupljena količina pokriva potrebu, broj pakiranja je cijeli, vaga samo uz pravilo", () => {
+    for (const row of rows.values()) {
+      const { purchase } = row.parts[0];
+      expect(purchase, row.ingredient).not.toBeNull();
+      expect(purchase!.purchaseQuantity, row.ingredient).toBeGreaterThanOrEqual(purchase!.neededQuantity - 1e-9);
+      if (purchase!.soldByWeight) {
+        expect(findIngredientRule(row.ingredient)?.looseOk, row.ingredient).toBe(true);
+      } else {
+        expect(Number.isInteger(purchase!.packCount), row.ingredient).toBe(true);
+        expect(purchase!.surplus, row.ingredient).toBeGreaterThanOrEqual(-1e-9);
+      }
+    }
+  });
+});
+
+describe("primjeri s ekrana koji su bili pogrešni", () => {
+  it("Papar 25 g (Lidl) je jedno pravo pakiranje od 50 g, ne 0,44 € za 0,03 kg", () => {
+    const index = buildProductIndex(toProducts(lidlCatalog));
+    const [row] = [priceShoppingItem(index, { name: "Papar", quantity: 25, unit: "g" }, findIngredientRule)];
+    expect(row.totalPrice).toBe(1.29);
+    expect(row.parts[0].purchase).toMatchObject({ packCount: 1, packSize: 0.05 });
+  });
+
+  it("Piletina 2,5 kg (Lidl) je oko 6,5 €/kg sirovih prsa, ne 26,55 €", () => {
+    const index = buildProductIndex(toProducts(lidlCatalog));
+    const row = priceShoppingItem(index, { name: "Piletina", quantity: 2.5, unit: "kg" }, findIngredientRule);
+    expect(row.totalPrice).toBe(16.31);
+    expect(row.parts[0].purchase?.pricePerKg).toBeCloseTo(6.52, 2);
+  });
+});
+
+describe("findIngredientRule / mergeItemsByRule", () => {
+  it("pronalazi pravilo po sinonimu, bez dijakritika i uz zagrade", () => {
+    expect(findIngredientRule("Biber")?.key).toBe("papar");
+    expect(findIngredientRule("Piletina")?.key).toBe("pileca-prsa");
+    expect(findIngredientRule("Riza")?.key).toBe("riza");
+    expect(findIngredientRule("Riža")?.key).toBe("riza");
+    expect(findIngredientRule("Luk (crveni)")?.key).toBe("luk");
+  });
+
+  it("ne hvata srodne sastojke koji imaju drugi značenje", () => {
+    expect(findIngredientRule("bijeli luk")).toBeUndefined();
+    expect(findIngredientRule("pileći batak")).toBeUndefined();
+  });
+
+  it("spaja sinonime i zbraja količine, i kad su jedinice različite (g + kg)", () => {
+    const merged = mergeItemsByRule(
+      [
+        { name: "Papar", unit: "g", quantity: 5 },
+        { name: "Biber", unit: "g", quantity: 10 },
+        { name: "Piletina", unit: "kg", quantity: 0.5 },
+        { name: "Pileća prsa", unit: "g", quantity: 250 },
+        { name: "Tikvice", unit: "g", quantity: 300 },
+      ],
+      findIngredientRule
+    );
+    expect(merged).toEqual([
+      { name: "Papar", unit: "g", quantity: 15 },
+      { name: "Pileća prsa", unit: "g", quantity: 750 },
+      { name: "Tikvice", unit: "g", quantity: 300 },
+    ]);
+  });
+
+  it("jedan redak ostaje netaknut s izvornim nazivom", () => {
+    const items = [{ name: "Piletina", unit: "g", quantity: 500 }];
+    expect(mergeItemsByRule(items, findIngredientRule)).toEqual(items);
+  });
+});

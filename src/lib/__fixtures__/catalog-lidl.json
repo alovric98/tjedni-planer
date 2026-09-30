@@ -1,0 +1,988 @@
+{
+ "store": "lidl",
+ "snapshotDate": "2026-09-30",
+ "note": "Subset of the real price list: only food/drink products matching an ingredient-rules include pattern (before exclude). Regenerate when rules change.",
+ "products": [
+  {
+   "name": "Grašak, smrznuto",
+   "brand": "Freshona",
+   "price": 1.99,
+   "unit": "kg",
+   "unit_price": 1.99,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Mljeveni crni papar",
+   "brand": "Kania",
+   "price": 1.39,
+   "unit": "kg",
+   "unit_price": 13.9,
+   "net_quantity": 0.1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Vegeta Univerzalni začin",
+   "brand": null,
+   "price": 5.79,
+   "unit": "kg",
+   "unit_price": 5.79,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Svježi pileći filet",
+   "brand": "Naša mesnica",
+   "price": 7.39,
+   "unit": "kg",
+   "unit_price": 7.39,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Svježa pileća prsa, bk sk, cca 500g",
+   "brand": "Naša mesnica",
+   "price": 5.99,
+   "unit": "kg",
+   "unit_price": 5.99,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Maslinovo ulje ekstra djev.",
+   "brand": "Primadonna",
+   "price": 8.49,
+   "unit": "l",
+   "unit_price": 8.49,
+   "net_quantity": 0.912,
+   "category": "Hrana"
+  },
+  {
+   "name": "Rezani šampinjoni 3. klasa",
+   "brand": "Freshona",
+   "price": 1.19,
+   "unit": "l",
+   "unit_price": 5.17,
+   "net_quantity": 0.4,
+   "category": "Hrana"
+  },
+  {
+   "name": "Mrkva 1kg",
+   "brand": null,
+   "price": 1.29,
+   "unit": "kg",
+   "unit_price": 1.29,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Peršin korijen 250g",
+   "brand": null,
+   "price": 1.29,
+   "unit": "kg",
+   "unit_price": 5.16,
+   "net_quantity": 0.25,
+   "category": "Hrana"
+  },
+  {
+   "name": "Šampinjoni smeđi 250g",
+   "brand": null,
+   "price": 1.39,
+   "unit": "kg",
+   "unit_price": 5.56,
+   "net_quantity": 0.25,
+   "category": "Hrana"
+  },
+  {
+   "name": "Šampinjoni 500g",
+   "brand": null,
+   "price": 1.99,
+   "unit": "kg",
+   "unit_price": 3.98,
+   "net_quantity": 0.5,
+   "category": "Hrana"
+  },
+  {
+   "name": "Baby šampinjoni 300g",
+   "brand": null,
+   "price": 1.59,
+   "unit": "kg",
+   "unit_price": 5.3,
+   "net_quantity": 0.3,
+   "category": "Hrana"
+  },
+  {
+   "name": "Maslinovo ulje SK4",
+   "brand": "Primadonna",
+   "price": 4.49,
+   "unit": "l",
+   "unit_price": 8.98,
+   "net_quantity": 0.458,
+   "category": "Hrana"
+  },
+  {
+   "name": "Extra djevičansko maslinovo ulje",
+   "brand": "Italiamo",
+   "price": 5.99,
+   "unit": "l",
+   "unit_price": 11.98,
+   "net_quantity": 0.458,
+   "category": "Hrana"
+  },
+  {
+   "name": "Grašak, smrznuti",
+   "brand": "Freshona",
+   "price": 1.19,
+   "unit": "kg",
+   "unit_price": 2.64,
+   "net_quantity": 0.45,
+   "category": "Hrana"
+  },
+  {
+   "name": "Pileći file u Cornflakes panadi",
+   "brand": "Naša mesnica",
+   "price": 9.25,
+   "unit": "kg",
+   "unit_price": 9.25,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "BO Ciabatta s maslinovim uljem",
+   "brand": null,
+   "price": 1.79,
+   "unit": "kg",
+   "unit_price": 5.97,
+   "net_quantity": 0.3,
+   "category": "Hrana"
+  },
+  {
+   "name": "Bio kašica puretina, riža, povrće",
+   "brand": "Lupilu",
+   "price": 0.95,
+   "unit": "kg",
+   "unit_price": 4.32,
+   "net_quantity": 0.22,
+   "category": "Hrana"
+  },
+  {
+   "name": "Konjak riža",
+   "brand": "Vitasia",
+   "price": 0.69,
+   "unit": "kg",
+   "unit_price": 2.56,
+   "net_quantity": 0.27,
+   "category": "Hrana"
+  },
+  {
+   "name": "Monini Ekstra djev. maslinovo ulje",
+   "brand": null,
+   "price": 7.99,
+   "unit": "l",
+   "unit_price": 7.99,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Vegeta Univerzalan začin",
+   "brand": null,
+   "price": 5.39,
+   "unit": "kg",
+   "unit_price": 7.7,
+   "net_quantity": 0.7,
+   "category": "Hrana"
+  },
+  {
+   "name": "Sushi riža",
+   "brand": "Vitasia",
+   "price": 1.19,
+   "unit": "kg",
+   "unit_price": 2.38,
+   "net_quantity": 0.5,
+   "category": "Hrana"
+  },
+  {
+   "name": "Desert riža na mlijeku pistacija",
+   "brand": null,
+   "price": 0.65,
+   "unit": "kg",
+   "unit_price": 3.25,
+   "net_quantity": 0.2,
+   "category": "Hrana"
+  },
+  {
+   "name": "Riža na mlijeku jagoda",
+   "brand": null,
+   "price": 0.65,
+   "unit": "kg",
+   "unit_price": 3.25,
+   "net_quantity": 0.2,
+   "category": "Hrana"
+  },
+  {
+   "name": "Cvjetača",
+   "brand": null,
+   "price": 1.99,
+   "unit": "kom",
+   "unit_price": 1.99,
+   "net_quantity": 0.914,
+   "category": "Hrana"
+  },
+  {
+   "name": "Luk srebrenac rinfuza",
+   "brand": null,
+   "price": 1.99,
+   "unit": "kg",
+   "unit_price": 1.99,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Riža dugog zrna Arborio",
+   "brand": "Golden Sun",
+   "price": 3.49,
+   "unit": "kg",
+   "unit_price": 3.49,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Basmati riža",
+   "brand": "Golden Sun",
+   "price": 2.69,
+   "unit": "kg",
+   "unit_price": 2.69,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Grašak mladi, OM 280g",
+   "brand": "Freshona",
+   "price": 1.09,
+   "unit": "l",
+   "unit_price": 3.89,
+   "net_quantity": 0.4,
+   "category": "Hrana"
+  },
+  {
+   "name": "Parboiled riža u vrećici 4x125g",
+   "brand": "Golden Sun",
+   "price": 1.19,
+   "unit": null,
+   "unit_price": 2.38,
+   "net_quantity": 0.5,
+   "category": "Hrana"
+  },
+  {
+   "name": "Kuhinjska jodirana sol",
+   "brand": "ChanteSel",
+   "price": 0.35,
+   "unit": "kg",
+   "unit_price": 0.7,
+   "net_quantity": 0.5,
+   "category": "Hrana"
+  },
+  {
+   "name": "Riža na mlijeku SK4",
+   "brand": "Pilos",
+   "price": 0.79,
+   "unit": "kg",
+   "unit_price": 3.95,
+   "net_quantity": 0.2,
+   "category": "Hrana"
+  },
+  {
+   "name": "Pizza šunka-šampinjoni XXL",
+   "brand": "Trattoria Alfredo",
+   "price": 5.09,
+   "unit": null,
+   "unit_price": 4.99,
+   "net_quantity": 1.02,
+   "category": "Hrana"
+  },
+  {
+   "name": "Šampinjoni rezani 250g",
+   "brand": null,
+   "price": 1.59,
+   "unit": "kg",
+   "unit_price": 6.36,
+   "net_quantity": 0.25,
+   "category": "Hrana"
+  },
+  {
+   "name": "Luk ljubičasti 1kg",
+   "brand": null,
+   "price": 0.99,
+   "unit": "kg",
+   "unit_price": 0.99,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Luk 750g",
+   "brand": null,
+   "price": 1.19,
+   "unit": "kg",
+   "unit_price": 1.59,
+   "net_quantity": 0.75,
+   "category": "Hrana"
+  },
+  {
+   "name": "Peršin list 50g",
+   "brand": null,
+   "price": 0.89,
+   "unit": "kg",
+   "unit_price": 17.8,
+   "net_quantity": 0.05,
+   "category": "Hrana"
+  },
+  {
+   "name": "Müller riža na mlijeku Dubai",
+   "brand": null,
+   "price": 0.79,
+   "unit": "kg",
+   "unit_price": 4.51,
+   "net_quantity": 0.175,
+   "category": "Hrana"
+  },
+  {
+   "name": "Ekstra djevičansko maslinovo ulje",
+   "brand": "Okusi zavičaja",
+   "price": 11.99,
+   "unit": "l",
+   "unit_price": 15.99,
+   "net_quantity": 0.75,
+   "category": "Hrana"
+  },
+  {
+   "name": "Ekstrudirana riža s kakaom",
+   "brand": "Crownfield",
+   "price": 2.09,
+   "unit": "kg",
+   "unit_price": 4.18,
+   "net_quantity": 0.5,
+   "category": "Hrana"
+  },
+  {
+   "name": "Pileći filet na štapiću",
+   "brand": "Naša mesnica",
+   "price": 4.99,
+   "unit": "kg",
+   "unit_price": 12.48,
+   "net_quantity": 0.4,
+   "category": "Hrana"
+  },
+  {
+   "name": "Desert riža na mlijeku vanilija",
+   "brand": null,
+   "price": 0.65,
+   "unit": "kg",
+   "unit_price": 3.25,
+   "net_quantity": 0.2,
+   "category": "Hrana"
+  },
+  {
+   "name": "Dorina Čokoladica riža",
+   "brand": null,
+   "price": 0.59,
+   "unit": "kg",
+   "unit_price": 0.59,
+   "net_quantity": 0.026,
+   "category": "Hrana"
+  },
+  {
+   "name": "Luk crveni rinfuza",
+   "brand": null,
+   "price": 0.79,
+   "unit": "kg",
+   "unit_price": 0.79,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Pileća prsa u ovitku, 500g",
+   "brand": "Pikok",
+   "price": 3.69,
+   "unit": "kg",
+   "unit_price": 7.38,
+   "net_quantity": 0.5,
+   "category": "Hrana"
+  },
+  {
+   "name": "Vegeta Univerzalni začin, 250g",
+   "brand": null,
+   "price": 2.19,
+   "unit": "kg",
+   "unit_price": 8.76,
+   "net_quantity": 0.25,
+   "category": "Hrana"
+  },
+  {
+   "name": "Roma riža dugog zrna",
+   "brand": "Golden Sun",
+   "price": 2.89,
+   "unit": "kg",
+   "unit_price": 2.89,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Parboiled riža u vrećici",
+   "brand": "Golden Sun",
+   "price": 0.99,
+   "unit": null,
+   "unit_price": 2.48,
+   "net_quantity": 0.4,
+   "category": "Hrana"
+  },
+  {
+   "name": "Luk crveni 2kg",
+   "brand": null,
+   "price": 1.54,
+   "unit": "kg",
+   "unit_price": 0.77,
+   "net_quantity": 2,
+   "category": "Hrana"
+  },
+  {
+   "name": "Cvjetača smrznuta",
+   "brand": "Freshona",
+   "price": 2.59,
+   "unit": "kg",
+   "unit_price": 2.59,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Bio riža SK1",
+   "brand": "Golden Sun",
+   "price": 1.99,
+   "unit": "kg",
+   "unit_price": 3.98,
+   "net_quantity": 0.5,
+   "category": "Hrana"
+  },
+  {
+   "name": "Bio ulje maslinovo eks. djev.",
+   "brand": "Primadonna",
+   "price": 6.49,
+   "unit": "l",
+   "unit_price": 12.98,
+   "net_quantity": 0.41,
+   "category": "Hrana"
+  },
+  {
+   "name": "Ekstra djevičansko maslinovo ulje",
+   "brand": "Primadonna",
+   "price": 8.49,
+   "unit": "l",
+   "unit_price": 5.66,
+   "net_quantity": 1.368,
+   "category": "Hrana"
+  },
+  {
+   "name": "Parboiled riža od cjelovitog zrna",
+   "brand": "Carosio",
+   "price": 2.59,
+   "unit": "kg",
+   "unit_price": 2.59,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Svježi pileći file, cca. 1kg",
+   "brand": null,
+   "price": 4.99,
+   "unit": "kg",
+   "unit_price": 4.99,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Bio kašica povrće, riža i govedina",
+   "brand": "Lupilu",
+   "price": 1.29,
+   "unit": "kg",
+   "unit_price": 5.16,
+   "net_quantity": 0.25,
+   "category": "Hrana"
+  },
+  {
+   "name": "Maslinovo extra dje. ulje u spreju",
+   "brand": "Kania",
+   "price": 3.99,
+   "unit": "l",
+   "unit_price": 19.95,
+   "net_quantity": 0.183,
+   "category": "Hrana"
+  },
+  {
+   "name": "O'Plant Biljni napitak riža",
+   "brand": null,
+   "price": 1.99,
+   "unit": "l",
+   "unit_price": 1.99,
+   "net_quantity": 1.04,
+   "category": "Hrana"
+  },
+  {
+   "name": "Pag 91 Morska sol krupna",
+   "brand": null,
+   "price": 0.49,
+   "unit": "kg",
+   "unit_price": 0.49,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Djevičansko maslinovo ulje iz Grčke",
+   "brand": "Deluxe",
+   "price": 5.49,
+   "unit": "l",
+   "unit_price": 7.32,
+   "net_quantity": 0.687,
+   "category": "Hrana"
+  },
+  {
+   "name": "Riso Scotti Arborio riža",
+   "brand": null,
+   "price": 2.95,
+   "unit": "kg",
+   "unit_price": 2.95,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Riža okruglog zrna Originario",
+   "brand": "Golden Sun",
+   "price": 1.99,
+   "unit": "kg",
+   "unit_price": 1.99,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Perutnina Ptuj Slim&Fit pileća prsa",
+   "brand": null,
+   "price": 2.99,
+   "unit": "kg",
+   "unit_price": 11.96,
+   "net_quantity": 0.25,
+   "category": "Hrana"
+  },
+  {
+   "name": "Riža dugozrnata 5% loma",
+   "brand": "Golden Sun",
+   "price": 1.59,
+   "unit": "kg",
+   "unit_price": 1.59,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Mladi grašak u rasolu (OM 265g)",
+   "brand": "Freshona",
+   "price": 0.85,
+   "unit": "l",
+   "unit_price": 3.21,
+   "net_quantity": 0.4,
+   "category": "Hrana"
+  },
+  {
+   "name": "Luk grano 750g",
+   "brand": null,
+   "price": 1.49,
+   "unit": "kg",
+   "unit_price": 1.49,
+   "net_quantity": 0.75,
+   "category": "Hrana"
+  },
+  {
+   "name": "Grašak s mrkvom, OM 265g",
+   "brand": "Freshona",
+   "price": 1.09,
+   "unit": "l",
+   "unit_price": 4.11,
+   "net_quantity": 0.4,
+   "category": "Hrana"
+  },
+  {
+   "name": "Svje. pileća prsa, bk sk, cca. 500g",
+   "brand": "Naša mesnica",
+   "price": 5.99,
+   "unit": "kg",
+   "unit_price": 5.99,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Bio ulje maslinovo eks. djev.",
+   "brand": "Primadonna",
+   "price": 8.99,
+   "unit": "l",
+   "unit_price": 11.99,
+   "net_quantity": 0.75,
+   "category": "Hrana"
+  },
+  {
+   "name": "Pag 91 Kuh. morska sol sitna doz.",
+   "brand": null,
+   "price": 0.99,
+   "unit": "kg",
+   "unit_price": 3.96,
+   "net_quantity": 0.25,
+   "category": "Hrana"
+  },
+  {
+   "name": "Ledo grašak smrznuti XXL",
+   "brand": null,
+   "price": 2.39,
+   "unit": "kg",
+   "unit_price": 3.41,
+   "net_quantity": 0.7,
+   "category": "Hrana"
+  },
+  {
+   "name": "Zvijezda maslinovo ulje",
+   "brand": null,
+   "price": 10.99,
+   "unit": "l",
+   "unit_price": 10.99,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Maslinovo ulje, ek. djevičansko SK1",
+   "brand": "Eridanous",
+   "price": 6.29,
+   "unit": "l",
+   "unit_price": 6.29,
+   "net_quantity": 0.916,
+   "category": "Hrana"
+  },
+  {
+   "name": "Svježi pileći filet, cca. 500g",
+   "brand": "Naša mesnica",
+   "price": 7.39,
+   "unit": "kg",
+   "unit_price": 7.39,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Svježi pileći file, cca. 500g",
+   "brand": "Naša mesnica",
+   "price": 7.39,
+   "unit": "kg",
+   "unit_price": 7.39,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Pileći file mix",
+   "brand": "Naša mesnica",
+   "price": 4.59,
+   "unit": "kg",
+   "unit_price": 7.65,
+   "net_quantity": 0.6,
+   "category": "Hrana"
+  },
+  {
+   "name": "Riso Scotti Reis Originario riža",
+   "brand": null,
+   "price": 2.25,
+   "unit": "kg",
+   "unit_price": 2.25,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Mljeveni crni papar",
+   "brand": "Kania",
+   "price": 1.29,
+   "unit": "kg",
+   "unit_price": 25.8,
+   "net_quantity": 0.05,
+   "category": "Hrana"
+  },
+  {
+   "name": "Šampinjoni 250g",
+   "brand": null,
+   "price": 1.29,
+   "unit": "kg",
+   "unit_price": 5.16,
+   "net_quantity": 0.25,
+   "category": "Hrana"
+  },
+  {
+   "name": "Luk crveni 1kg",
+   "brand": null,
+   "price": 0.79,
+   "unit": "kg",
+   "unit_price": 0.79,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Ekstra djevičansko maslinovo ulje",
+   "brand": "Eridanous",
+   "price": 20.99,
+   "unit": "l",
+   "unit_price": 7,
+   "net_quantity": 2.73,
+   "category": "Hrana"
+  },
+  {
+   "name": "Riža dugog zrna (13-15min)",
+   "brand": "Golden Sun",
+   "price": 1.99,
+   "unit": "kg",
+   "unit_price": 1.99,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Maslinovo ulje",
+   "brand": "Deluxe",
+   "price": 7.59,
+   "unit": "l",
+   "unit_price": 15.18,
+   "net_quantity": 0.458,
+   "category": "Hrana"
+  },
+  {
+   "name": "Riža dugog zrna (12-15min)",
+   "brand": "Golden Sun",
+   "price": 2.19,
+   "unit": "kg",
+   "unit_price": 2.19,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "PP Pileći file na štapiću",
+   "brand": null,
+   "price": 5.29,
+   "unit": "kg",
+   "unit_price": 13.23,
+   "net_quantity": 0.4,
+   "category": "Hrana"
+  },
+  {
+   "name": "Desert riža na mlijeku čokolada",
+   "brand": null,
+   "price": 0.65,
+   "unit": "kg",
+   "unit_price": 3.25,
+   "net_quantity": 0.2,
+   "category": "Hrana"
+  },
+  {
+   "name": "Ekstra djevičansko maslinovo ulje",
+   "brand": null,
+   "price": 4.89,
+   "unit": "l",
+   "unit_price": 4.89,
+   "net_quantity": 1.38,
+   "category": "Hrana"
+  },
+  {
+   "name": "Riso Scotti Oro Parboiled riža",
+   "brand": null,
+   "price": 2.25,
+   "unit": "kg",
+   "unit_price": 2.25,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Pag91 Kuhinjska morska sol sitna",
+   "brand": null,
+   "price": 0.49,
+   "unit": "kg",
+   "unit_price": 0.49,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Tajlandska riža od jasmina",
+   "brand": "Vitasia",
+   "price": 8.99,
+   "unit": "kg",
+   "unit_price": 1.8,
+   "net_quantity": 5,
+   "category": "Hrana"
+  },
+  {
+   "name": "Maslinovo ulje za prženje",
+   "brand": "Primadonna",
+   "price": 6.99,
+   "unit": "l",
+   "unit_price": 6.99,
+   "net_quantity": 0.913,
+   "category": "Hrana"
+  },
+  {
+   "name": "Španjolska riža u mlijeku",
+   "brand": "Sol&Mar",
+   "price": 1.79,
+   "unit": null,
+   "unit_price": 3.44,
+   "net_quantity": 0.52,
+   "category": "Hrana"
+  },
+  {
+   "name": "Vegeta Univerzalni zač. 250g + 20%g",
+   "brand": null,
+   "price": 1.95,
+   "unit": "kg",
+   "unit_price": 6.5,
+   "net_quantity": 0.3,
+   "category": "Hrana"
+  },
+  {
+   "name": "Hipp BIO meni povrće/riža/piletina",
+   "brand": null,
+   "price": 2.05,
+   "unit": "kg",
+   "unit_price": 10.79,
+   "net_quantity": 0.19,
+   "category": "Hrana"
+  },
+  {
+   "name": "Mrkva kolač",
+   "brand": "Okusi zavičaja",
+   "price": 4.99,
+   "unit": "kg",
+   "unit_price": 8.32,
+   "net_quantity": 0.6,
+   "category": "Hrana"
+  },
+  {
+   "name": "Vegeta Univerzalni začin",
+   "brand": null,
+   "price": 1.19,
+   "unit": "kg",
+   "unit_price": 15.87,
+   "net_quantity": 0.075,
+   "category": "Hrana"
+  },
+  {
+   "name": "Jasmin riža",
+   "brand": "Vitasia",
+   "price": 4.09,
+   "unit": "kg",
+   "unit_price": 2.05,
+   "net_quantity": 2,
+   "category": "Hrana"
+  },
+  {
+   "name": "Perutnina Ptuj dimljena pileća prsa",
+   "brand": null,
+   "price": 2.99,
+   "unit": "kg",
+   "unit_price": 11.96,
+   "net_quantity": 0.25,
+   "category": "Hrana"
+  },
+  {
+   "name": "Hipp BIO meni povrće/riža/teletina",
+   "brand": null,
+   "price": 2.05,
+   "unit": "kg",
+   "unit_price": 9.32,
+   "net_quantity": 0.22,
+   "category": "Hrana"
+  },
+  {
+   "name": "Pileće file trakice",
+   "brand": "Naša mesnica",
+   "price": 4.29,
+   "unit": "kg",
+   "unit_price": 12.26,
+   "net_quantity": 0.35,
+   "category": "Hrana"
+  },
+  {
+   "name": "Dorina Tamna čokoladica riža",
+   "brand": null,
+   "price": 0.59,
+   "unit": "kg",
+   "unit_price": 0.59,
+   "net_quantity": 0.026,
+   "category": "Hrana"
+  },
+  {
+   "name": "Grašak-mrkva mix, smrznuto",
+   "brand": "Freshona",
+   "price": 1.19,
+   "unit": "kg",
+   "unit_price": 2.64,
+   "net_quantity": 0.45,
+   "category": "Hrana"
+  },
+  {
+   "name": "Peršin korijen list 250g",
+   "brand": null,
+   "price": 1.59,
+   "unit": "kg",
+   "unit_price": 6.36,
+   "net_quantity": 0.25,
+   "category": "Hrana"
+  },
+  {
+   "name": "Luk srebrenac, slatki",
+   "brand": null,
+   "price": 2.19,
+   "unit": "kg",
+   "unit_price": 2.19,
+   "net_quantity": 1,
+   "category": "Hrana"
+  },
+  {
+   "name": "Tuna i grašak",
+   "brand": "Nixe",
+   "price": 2.99,
+   "unit": null,
+   "unit_price": 9.34,
+   "net_quantity": 0.32,
+   "category": "Hrana"
+  },
+  {
+   "name": "Pileća prsa, narezak",
+   "brand": "Pikok",
+   "price": 1.39,
+   "unit": "kg",
+   "unit_price": 13.9,
+   "net_quantity": 0.1,
+   "category": "Hrana"
+  },
+  {
+   "name": "PEPE Ekstra djev. Maslinovo ulje",
+   "brand": null,
+   "price": 4.89,
+   "unit": "l",
+   "unit_price": 4.89,
+   "net_quantity": 0.914,
+   "category": "Hrana"
+  },
+  {
+   "name": "Pileća prsa XXL SK8",
+   "brand": "Dulano",
+   "price": 4.29,
+   "unit": "kg",
+   "unit_price": 10.73,
+   "net_quantity": 0.4,
+   "category": "Hrana"
+  },
+  {
+   "name": "Luk ljubičasti rinfuza",
+   "brand": null,
+   "price": 1.09,
+   "unit": "kg",
+   "unit_price": 1.09,
+   "net_quantity": 1,
+   "category": "Hrana"
+  }
+ ]
+}

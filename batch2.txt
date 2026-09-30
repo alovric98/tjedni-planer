@@ -1,0 +1,449 @@
+===FILE_START:src/config/store-options.ts===
+export type StoreKey = "lidl" | "kaufland" | "tommy" | "studenac" | "konzum";
+
+export type StoreOption = {
+  key: StoreKey;
+  label: string;
+  /** Ima li trgovina live cijene danas - vidi src/config/stores.ts, src/lib/price-fetch/*. */
+  available: boolean;
+};
+
+// Generički popis trgovina za onboarding - nova trgovina (kad dobije live
+// cjenik) postaje "available: true", bez promjene onboarding UI-a ili
+// filtriranja u Košarici.
+export const STORE_OPTIONS: StoreOption[] = [
+  { key: "lidl", label: "Lidl", available: true },
+  { key: "kaufland", label: "Kaufland", available: true },
+  { key: "tommy", label: "Tommy", available: false },
+  { key: "studenac", label: "Studenac", available: false },
+  { key: "konzum", label: "Konzum", available: false },
+];
+===FILE_END===
+===FILE_START:src/lib/ingredient-synonyms.ts===
+/**
+ * Regionalni/dijalektalni nazivi sastojaka koji u hrvatskim trgovačkim
+ * cjenicima (Kaufland/Lidl) stoje pod drugim, standardnim nazivom - npr.
+ * "biber" (bosanski/dijalektalni naziv) vs "papar" (jedini naziv koji
+ * koristi Kaufland cjenik, provjereno 29.09.2026). Riječi ovdje su već
+ * normalizirane (normalize() - malim slovima, bez dijakritike) jer se
+ * ovako uspoređuju i u matching.ts.
+ *
+ * Svaka grupa je lista međusobno zamjenjivih riječi - matcher ih tretira
+ * kao ravnopravne alternative kad traži cijelu riječ/prefiks u nazivu
+ * proizvoda (wordScore u matching.ts), a "bez X" negacijska logika i dalje
+ * vrijedi zasebno za svaku alternativu. Dodaj novi par samo kad postoji
+ * stvaran primjer u receptima ili cjeniku - ne nagađaj parove.
+ */
+const SYNONYM_GROUPS: string[][] = [["biber", "papar"]];
+
+const SYNONYM_INDEX: Map<string, string[]> = new Map();
+for (const group of SYNONYM_GROUPS) {
+  for (const word of group) {
+    SYNONYM_INDEX.set(
+      word,
+      group.filter((w) => w !== word)
+    );
+  }
+}
+
+export function synonymsOf(word: string): string[] {
+  return SYNONYM_INDEX.get(word) ?? [];
+}
+===FILE_END===
+===FILE_START:src/lib/matching.test.ts===
+import { describe, it, expect } from "vitest";
+import { buildProductIndex, matchProductCandidates, matchProduct } from "@/lib/matching";
+import { testProduct } from "@/lib/test-helpers";
+
+describe("matchProductCandidates - prag pouzdanosti + kategorijski filtar (FIX 1, korak 0)", () => {
+  it("isključuje kandidate izvan hrane/pića (audit N1: 'mlijeko' -> Nivea losion)", () => {
+    const index = buildProductIndex([
+      testProduct({ id: "1", name: "Nivea mlijeko za tijelo Q10 400 ml", price: 12.39, category: "KOZMETIKA" }),
+      testProduct({ id: "2", name: "Dukat trajno mlijeko 1L", price: 0.99, unit: "l", unit_price: 0.99 }),
+    ]);
+    const candidates = matchProductCandidates(index, "mlijeko");
+    expect(candidates.map((c) => c.product.id)).toEqual(["2"]);
+  });
+
+  it("ne baca kandidata s nepoznatom kategorijom (ne može se provjeriti, pa se ne odbacuje)", () => {
+    const index = buildProductIndex([testProduct({ id: "1", name: "Svježe mlijeko 1L", price: 1.1, category: null })]);
+    expect(matchProductCandidates(index, "mlijeko")).toHaveLength(1);
+  });
+
+  it("vraća prazno kad glavna imenica uopće nema veze s upitom", () => {
+    const index = buildProductIndex([testProduct({ id: "1", name: "Integralna tjestenina Penne 500g", price: 1.5 })]);
+    expect(matchProductCandidates(index, "mrkva")).toHaveLength(0);
+  });
+
+  it("ne pogađa 'jaja' u nazivu 'tjestenina bez jaja' (negacijski filtar za 'bez X' fraze)", () => {
+    const index = buildProductIndex([
+      testProduct({ id: "1", name: "Barilla tjestenina bez jaja 500g", price: 2.5 }),
+      testProduct({ id: "2", name: "Svježa jaja 10 kom", price: 2.1 }),
+    ]);
+    const candidates = matchProductCandidates(index, "jaja");
+    expect(candidates.map((c) => c.product.id)).toEqual(["2"]);
+  });
+
+  it("negacija djeluje i kad je negirani proizvod jedini kandidat (rezultat prazan, ne pogrešan pogodak)", () => {
+    const index = buildProductIndex([
+      testProduct({ id: "1", name: "Tjestenina bez jaja Penne 500g", price: 2.5 }),
+    ]);
+    expect(matchProductCandidates(index, "jaja")).toHaveLength(0);
+  });
+
+  it("prepoznaje regionalni naziv 'biber' za Kauflandov 'papar' (sinonim rječnik)", () => {
+    const index = buildProductIndex([
+      testProduct({ id: "1", name: "Kotanyi papar crni mljeveni 50g", price: 2.35 }),
+    ]);
+    const candidates = matchProductCandidates(index, "biber");
+    expect(candidates.map((c) => c.product.id)).toEqual(["1"]);
+  });
+
+  it("'bez X' negacija vrijedi i preko sinonima - 'bez papar' ne pogađa upit 'biber'", () => {
+    const index = buildProductIndex([testProduct({ id: "1", name: "Umak bez papar 200 g", price: 1.5 })]);
+    expect(matchProductCandidates(index, "biber")).toHaveLength(0);
+  });
+
+  it("matchProduct je tanki wrapper - vraća najbolji kandidat ili null", () => {
+    const index = buildProductIndex([testProduct({ id: "1", name: "Dukat trajno mlijeko 1L", price: 0.99 })]);
+    expect(matchProduct(index, "mlijeko")?.id).toBe("1");
+    expect(matchProduct(index, "nepostojeca namirnica xyz")).toBeNull();
+  });
+});
+===FILE_END===
+===FILE_START:src/lib/matching.ts===
+import { normalize } from "@/lib/normalize";
+import { synonymsOf } from "@/lib/ingredient-synonyms";
+import type { ProductForMatching } from "@/lib/products";
+
+const STOPWORDS = new Set(["i", "u", "s", "sa", "za", "od", "na", "po", "te", "ili"]);
+
+type IndexedProduct = {
+  product: ProductForMatching;
+  normalizedName: string;
+};
+
+export type ProductIndex = IndexedProduct[];
+
+export function buildProductIndex(products: ProductForMatching[]): ProductIndex {
+  return products.map((product) => ({
+    product,
+    // Kaufland/Lidl nazivi često spajaju riječi interpunkcijom bez razmaka
+    // ("KLC.Tjestenina", "Naturel_OC") - to bi inače sakrilo prvu/zadnju
+    // riječ od provjere granice riječi ispod.
+    normalizedName: normalize(product.name.replace(/[._\-/]+/g, " ")),
+  }));
+}
+
+function queryWordsOf(ingredientName: string): string[] {
+  // Zagrade su opisne napomene za korisnika ("crveni grah (konzerva)",
+  // "feta sir (light)"), ne dio naziva koji bi trebao doslovno stajati u
+  // nazivu proizvoda.
+  const withoutParens = ingredientName.replace(/\([^)]*\)/g, " ");
+  return normalize(withoutParens)
+    .split(/\s+/)
+    .filter((w) => w.length > 0 && !STOPWORDS.has(w));
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+const NEGATION_WORD = "bez";
+
+/**
+ * "Tjestenina bez jaja" ne smije brojati kao pogodak za upit "jaja" - "bez"
+ * doslovno znači da sastojak NIJE u proizvodu, suprotno od onoga što tražimo.
+ * Traži cijelu riječ upita neposredno iza "bez" (word-boundary na oba kraja),
+ * ne samo substring - inače bi "bez" bilo koji drugi negiran sastojak
+ * (npr. "bez laktoze") lažno poništio nepovezanu riječ koja se slučajno
+ * pojavljuje negdje drugdje u istom nazivu.
+ */
+function isNegatedInTarget(word: string, target: string): boolean {
+  return new RegExp(`(^|\\s)${NEGATION_WORD}\\s+${escapeRegExp(word)}(\\s|$)`).test(target);
+}
+
+/**
+ * Bodovanje jedne riječi (ili njene regionalne sinonim-alternative, npr.
+ * "biber" -> "papar") naspram naziva proizvoda:
+ * 2 = stoji kao cijela riječ (npr. "luk" u "Luk 750g")
+ * 1 = poklapa se korijen/prefiks riječi, otporno na jedninu/množinu i
+ *     skraćene varijante ("tikvice" -> "tikvica", "integralna" -> "integralne")
+ * 0 = nema stvarne veze, ILI riječ stoji u nazivu samo unutar negacije
+ *     ("bez jaja") - vidi isNegatedInTarget
+ * Riječi kraće od 3 znaka se ne boduju - premalo su specifične sam za sebe
+ * i lako bi lažno pogodile nepovezan proizvod.
+ */
+function wordScore(word: string, target: string): number {
+  if (word.length < 3) return 0;
+  let best = 0;
+  for (const candidate of [word, ...synonymsOf(word)]) {
+    const score = wordScoreForLiteral(candidate, target);
+    if (score > best) best = score;
+  }
+  return best;
+}
+
+/**
+ * Stvarna provjera jedne doslovne riječi (bez sinonima) naspram naziva
+ * proizvoda - dijeljena i za izvornu riječ upita i za svaku njenu
+ * sinonim-alternativu, tako da "bez X" negacija (isNegatedInTarget) vrijedi
+ * jednako za obje, a ne samo za izvornu riječ upita.
+ */
+function wordScoreForLiteral(word: string, target: string): number {
+  if (isNegatedInTarget(word, target)) return 0;
+  if (new RegExp(`(^|\\s)${escapeRegExp(word)}(\\s|$)`).test(target)) return 2;
+  const prefixLength = Math.min(word.length, Math.max(4, Math.ceil(word.length * 0.7)));
+  return target.includes(word.slice(0, prefixLength)) ? 1 : 0;
+}
+
+// Kaufland/Lidl cjenik dijeli cijeli katalog na svega 6 širokih kategorija
+// (HRANA, PIĆE, KOZMETIKA, PROIZVODI ZA KUĆANSTVO, SREDSTVA ZA ČIŠĆENJE,
+// TOALETNE POTREPŠTINE - provjereno na stvarnom Kaufland cjeniku,
+// 29.09.2026). Sastojci recepata su isključivo hrana i piće; bez ovog filtra
+// "mlijeko" uparuje Nivea losion za tijelo (kategorija KOZMETIKA) jer riječ
+// "mlijeko" doslovno stoji u nazivu kozmetičkog proizvoda (audit N1). Kad
+// kategorija nedostaje (npr. nepotvrđeno Lidlovo polje, audit N19) ne
+// filtriramo - bolje propustiti kandidata na provjeru praga nego ga tiho
+// izgubiti zbog praznog polja.
+const FOOD_CATEGORIES = new Set(["HRANA", "PIĆE"]);
+
+/**
+ * wordScore je odozgo neograničen brojem riječi upita (max 2 po riječi), pa
+ * ga normaliziramo na 0-1 da prag ispod ima stvarno značenje "koliki dio
+ * upita se poklapa", a ne apsolutni zbroj koji ovisi o duljini sastojka.
+ */
+function normalizedScore(queryWords: string[], target: string): number {
+  const max = queryWords.length * 2;
+  if (max === 0) return 0;
+  const sum = queryWords.reduce((total, w) => total + wordScore(w, target), 0);
+  return sum / max;
+}
+
+// Kalibrirano na stvarnom Kaufland cjeniku (15.358 proizvoda, 29.09.2026):
+// 0.6 propušta prave sinonime i varijante marke (sve vrste trajnog/svježeg
+// mlijeka za upit "mlijeko", sve vrste maslinovog ulja za "maslinovo ulje")
+// dok odbacuje slabe pogotke gdje se poklopi samo jedan pridjev ili kratki
+// prefiks. Slučaj kad kratka jednorječna namirnica (npr. "jaja") doslovno
+// stoji u nazivu potpuno drugog proizvoda (npr. tjestenina "bez jaja") je
+// riješen direktno u wordScore/isNegatedInTarget (negacijski filtar za
+// "bez X" fraze), ne pragom - prag ostaje čisto mjera "koliki dio upita se
+// poklapa". Ispod praga = kandidat se uopće ne broji, ni u prosjek ni u
+// prikaz "N proizvoda".
+export const MIN_MATCH_SIMILARITY = 0.6;
+
+export type MatchCandidate = {
+  product: ProductForMatching;
+  score: number; // 0-1, normalizirani wordScore
+};
+
+/**
+ * Vraća SVE kandidate iznad praga pouzdanosti (ne bira pobjednika) - FIX 1,
+ * korak 0. `matchProduct` ispod je tanki wrapper zadržan zbog kompatibilnosti
+ * postojećih poziva; stvarna logika cijene (prosjek/trimmed mean, korak 1-3)
+ * živi u `src/lib/pricing.ts` i konzumira ovu listu.
+ */
+export function matchProductCandidates(index: ProductIndex, ingredientName: string): MatchCandidate[] {
+  const queryWords = queryWordsOf(ingredientName);
+  if (queryWords.length === 0) return [];
+
+  // Hrvatski naziv sastojka je gotovo uvijek pridjev(i) + glavna imenica na
+  // kraju ("mljevena junetina", "integralna tjestenina", "crveni grah").
+  // Bez ovoga generički pridjev sam po sebi zna "pogoditi" nepovezan
+  // proizvod (npr. "mljevena" iz "mljevena junetina" pogodi "mljevena
+  // kava") čak i kad prava imenica nigdje ne postoji - zato imenica MORA
+  // imati stvarnu vezu, pridjevi samo pomažu u rangiranju among kandidata.
+  const headWord = queryWords[queryWords.length - 1];
+
+  const candidates: MatchCandidate[] = [];
+  for (const entry of index) {
+    if (wordScore(headWord, entry.normalizedName) === 0) continue;
+    const category = entry.product.category;
+    if (category && !FOOD_CATEGORIES.has(category)) continue;
+    const score = normalizedScore(queryWords, entry.normalizedName);
+    if (score >= MIN_MATCH_SIMILARITY) candidates.push({ product: entry.product, score });
+  }
+
+  // Rangiranje samo za prikaz/reprezentativni naziv (kad je 1 kandidat) -
+  // ne bira "pobjednika" za cijenu, to radi prosjek u pricing.ts. Najkraći
+  // naziv je uklonjen kao kriterij (ranije birao "pobjednika" bez razloga,
+  // audit N1) - ostaje samo score, pa cijena kao razrješenje ravnopravnih.
+  candidates.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return a.product.price - b.product.price;
+  });
+
+  return candidates;
+}
+
+/**
+ * Zadržan stari potpis (jedan proizvod ili null) radi kompatibilnosti s
+ * eventualnim jednostavnim pozivima izvan košarice - u samoj košarici se
+ * više ne koristi, ondje ide `matchProductCandidates` kroz `pricing.ts`.
+ */
+export function matchProduct(index: ProductIndex, ingredientName: string): ProductForMatching | null {
+  return matchProductCandidates(index, ingredientName)[0]?.product ?? null;
+}
+===FILE_END===
+===FILE_START:src/lib/supabase/client.ts===
+"use client";
+
+import { createBrowserClient } from "@supabase/ssr";
+import type { Database } from "@/lib/database.types";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+/** Klijent za Client Componente (npr. gumb "Nastavi s Google"). */
+export function createClient() {
+  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
+}
+===FILE_END===
+===FILE_START:src/lib/supabase/middleware.ts===
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+import type { Database } from "@/lib/database.types";
+
+// Dev-only prekidač za zaobilaženje logina dok se testira lokalno bez
+// stvarnog Google OAuth-a u Supabaseu. NIKAD postaviti na "true" u
+// Production env varijablama na Vercelu.
+const AUTH_DISABLED = process.env.NEXT_PUBLIC_AUTH_DISABLED === "true";
+
+// Rute dostupne bez prijave - login ekran, OAuth povratni URL, i cron
+// endpointi koje zove Vercel Cron (ne prijavljeni korisnik, štite se
+// vlastitim CRON_SECRET headerom u api/cron rutama).
+const PUBLIC_PATHS = ["/login", "/auth/callback", "/api/cron"];
+
+function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+export async function updateSession(request: NextRequest) {
+  let response = NextResponse.next({ request });
+
+  if (AUTH_DISABLED) return response;
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseAnonKey) return response;
+
+  const supabase = createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        for (const { name, value } of cookiesToSet) {
+          request.cookies.set(name, value);
+        }
+        response = NextResponse.next({ request });
+        for (const { name, value, options } of cookiesToSet) {
+          response.cookies.set(name, value, options);
+        }
+      },
+    },
+  });
+
+  // getUser() (ne getSession()) - provjerava JWT kod Supabase Auth servera,
+  // ne samo dešifrira kolačić, pa se ne može zaobići lažnim/isteklim
+  // kolačićem.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { pathname } = request.nextUrl;
+
+  if (!user) {
+    if (isPublicPath(pathname)) return response;
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    loginUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (pathname === "/login") {
+    const homeUrl = request.nextUrl.clone();
+    homeUrl.pathname = "/recepti";
+    homeUrl.search = "";
+    return NextResponse.redirect(homeUrl);
+  }
+
+  if (pathname !== "/onboarding" && !isPublicPath(pathname)) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("onboarding_completed")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profile && !profile.onboarding_completed) {
+      const onboardingUrl = request.nextUrl.clone();
+      onboardingUrl.pathname = "/onboarding";
+      onboardingUrl.search = "";
+      return NextResponse.redirect(onboardingUrl);
+    }
+  }
+
+  return response;
+}
+===FILE_END===
+===FILE_START:src/lib/supabase/server.ts===
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
+import type { Database } from "@/lib/database.types";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    "Nedostaju NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY env varijable. Vidi .env.example."
+  );
+}
+
+/**
+ * Klijent vezan uz trenutni request (Server Component / Server Action) -
+ * nosi korisnikovu sesiju iz kolačića, pa RLS politike (auth.uid()) rade
+ * ispravno za tablice profila, odabira trgovina i popisa. Za dijeljene,
+ * ne-korisničke podatke (recepti, tjedni plan, cjenik) i dalje se koristi
+ * plain klijent iz "@/lib/supabase".
+ */
+export async function createClient() {
+  const cookieStore = await cookies();
+
+  return createServerClient<Database>(supabaseUrl!, supabaseAnonKey!, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        try {
+          for (const { name, value, options } of cookiesToSet) {
+            cookieStore.set(name, value, options);
+          }
+        } catch {
+          // Pozvano iz Server Componenta bez mogućnosti pisanja kolačića
+          // (Next.js ograničenje) - middleware već obnavlja sesiju na
+          // svakom requestu, pa je ovo sigurno ignorirati.
+        }
+      },
+    },
+  });
+}
+===FILE_END===
+===FILE_START:src/proxy.ts===
+import type { NextRequest } from "next/server";
+import { updateSession } from "@/lib/supabase/middleware";
+
+// Next.js 16 preimenovao je "middleware" konvenciju u "proxy" (isti mehanizam,
+// vidi node_modules/next/dist/docs/.../proxy.md) - ovaj file je namjerno
+// proxy.ts, ne middleware.ts.
+export function proxy(request: NextRequest) {
+  return updateSession(request);
+}
+
+export const config = {
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
+};
+===FILE_END===

@@ -1,0 +1,789 @@
+===FILE_START:.env.example===
+# Supabase - vidi README.md za upute kako doći do ovih vrijednosti.
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+
+# Štiti /api/cron/* rute od poziva izvana - generiraj npr. s
+# `openssl rand -hex 32`. Vercel Cron ga automatski šalje kao Bearer token
+# kad je postavljen i u Vercel env varijablama.
+CRON_SECRET=
+
+# Dev-only prekidač za lokalno testiranje bez stvarnog Google OAuth-a -
+# postavi na "true" u .env.local da zaobiđeš login/onboarding redirect.
+# NIKAD postaviti u Vercel Production env varijablama.
+NEXT_PUBLIC_AUTH_DISABLED=
+===FILE_END===
+===FILE_START:src/app/auth/callback/route.ts===
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+
+export async function GET(request: Request) {
+  const { searchParams, origin } = new URL(request.url);
+  const code = searchParams.get("code");
+  const next = searchParams.get("next") ?? "/recepti";
+
+  if (code) {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) {
+      return NextResponse.redirect(`${origin}${next}`);
+    }
+  }
+
+  return NextResponse.redirect(`${origin}/login?error=oauth`);
+}
+===FILE_END===
+===FILE_START:src/app/kosarica/StoreTabs.tsx===
+"use client";
+
+import { useState } from "react";
+import { formatQuantity, formatBasisQuantity } from "@/lib/format";
+import type { BasketLineResult, PartPriceResult } from "@/lib/pricing";
+import type { StoreKey } from "@/config/store-options";
+
+export type StoreBasket = {
+  rows: BasketLineResult[];
+  total: number;
+  unpricedCount: number;
+  lastUpdated: string | null;
+  isStale: boolean;
+};
+
+export type StoreEntry = {
+  key: StoreKey;
+  label: string;
+  basket: StoreBasket;
+};
+
+function formatDate(iso: string | null): string {
+  if (!iso) return "nikad";
+  return new Date(iso).toLocaleString("hr-HR", { dateStyle: "medium", timeStyle: "short" });
+}
+
+// "1 stavka / 2 stavke / 5 stavki" - standardna slavenska pluralizacija
+// (11-14 uvijek "stavki", inače po zadnjoj znamenki).
+function pluralStavki(n: number): string {
+  const mod100 = n % 100;
+  const mod10 = n % 10;
+  if (mod100 >= 11 && mod100 <= 14) return "stavki";
+  if (mod10 === 1) return "stavka";
+  if (mod10 >= 2 && mod10 <= 4) return "stavke";
+  return "stavki";
+}
+
+function InfoIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 shrink-0" aria-hidden="true">
+      <path
+        fillRule="evenodd"
+        d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-11.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM9 9a1 1 0 0 0 0 2h.25v3H9a1 1 0 1 0 0 2h2.5a1 1 0 1 0 0-2h-.25V10a1 1 0 0 0-1-1H9Z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
+
+/** "Treba / Kupuješ" + oznaka "prosjek N proizvoda" (FIX 1 + FIX 2 u UI-u). */
+function PartPurchaseLine({ part }: { part: PartPriceResult }) {
+  if (part.itemPrice === null || !part.purchase) {
+    return <p className="text-xs text-warn">cijena nedostupna</p>;
+  }
+  const { purchase, averagePrice } = part;
+  const rangeLabel =
+    averagePrice.min !== null && averagePrice.max !== null
+      ? `${averagePrice.min.toFixed(2)}–${averagePrice.max.toFixed(2)} €/${purchase.basis}`
+      : "";
+  const trimmedLabel =
+    averagePrice.trimmedOutCount > 0
+      ? `, ${averagePrice.trimmedOutCount} ${averagePrice.trimmedOutCount === 1 ? "ekstrem izbačen" : "ekstrema izbačeno"} iz prosjeka`
+      : "";
+
+  return (
+    <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-muted">
+      <span>Kupuješ: {formatBasisQuantity(purchase.purchaseQuantity, purchase.basis)}</span>
+      {purchase.packageSizeAssumed && (
+        <span
+          className="text-ink-muted/80"
+          title="Cjenik ne daje veličinu pakiranja za ovaj proizvod - koristi se pretpostavljena standardna veličina."
+        >
+          · pretpostavljeno pakiranje
+        </span>
+      )}
+      {averagePrice.usedAverage && (
+        <span
+          className="inline-flex items-center gap-1 font-semibold text-ink-muted"
+          title={`Prosjek ${averagePrice.pricedCount} proizvoda (${rangeLabel}${trimmedLabel})`}
+        >
+          <InfoIcon />
+          prosjek {averagePrice.pricedCount} proizvoda
+        </span>
+      )}
+    </p>
+  );
+}
+
+/**
+ * Jedan redak popisa - Košarica je isključivo za usporedbu cijena
+ * (read-only), tap-to-strike checklist interakcija živi na "Tjedni plan"
+ * ekranu (ShoppingListGenerator.tsx), gdje se koristi u dućanu.
+ */
+function BasketRow({ row }: { row: BasketLineResult }) {
+  const chosenPart = row.chosenPartIndex !== null ? row.parts[row.chosenPartIndex] : null;
+
+  return (
+    <div className="flex min-h-12 items-start gap-3 py-4">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-semibold text-ink">{row.ingredient}</p>
+            {row.mode === "single" && chosenPart?.matchedName && (
+              <p className="mt-0.5 truncate text-sm text-ink-muted">{chosenPart.matchedName}</p>
+            )}
+            {row.mode === "or" && chosenPart && (
+              <p className="mt-0.5 truncate text-sm text-ink-muted">
+                {chosenPart.matchedName ?? chosenPart.name}{" "}
+                <span className="text-xs">(odabrano - jeftinija alternativa)</span>
+              </p>
+            )}
+          </div>
+          <div className="shrink-0 text-right">
+            <p className="text-xs text-ink-muted">
+              Treba: {formatQuantity(row.quantity)} {row.unit}
+            </p>
+            <p className="font-semibold tabular-nums text-ink">
+              {row.totalPrice !== null ? `${row.totalPrice.toFixed(2)} €` : <span className="text-warn">cijena nedostupna</span>}
+            </p>
+          </div>
+        </div>
+
+        {row.mode === "and" ? (
+          <div className="mt-2 space-y-2 border-t border-border pt-2">
+            {row.parts.map((part, i) => (
+              <div key={i}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-ink-muted">{part.matchedName ?? part.name}</span>
+                  <span className="shrink-0 text-xs font-semibold tabular-nums text-ink">
+                    {part.itemPrice !== null ? `${part.itemPrice.toFixed(2)} €` : <span className="text-warn">nedostupno</span>}
+                  </span>
+                </div>
+                <PartPurchaseLine part={part} />
+              </div>
+            ))}
+            {row.partiallyUnavailable && (
+              <p className="text-xs text-warn">Dio ovog sastojka nema cijenu - u zbroju je samo ostatak.</p>
+            )}
+          </div>
+        ) : (
+          chosenPart && <PartPurchaseLine part={chosenPart} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StaleBanner({ label, basket }: { label: string; basket: StoreBasket }) {
+  if (!basket.isStale) return null;
+  return (
+    <div className="mb-3 rounded-xl border border-warn/30 bg-warn-bg p-4">
+      <p className="text-sm font-semibold text-warn">Cijene za {label} nisu ažurirane danas</p>
+      <p className="mt-1 text-xs text-warn">
+        Zadnji uspješan dohvat: {formatDate(basket.lastUpdated)}. Prikazane cijene mogu biti stare i ne odražavati
+        stanje u trgovini.
+      </p>
+    </div>
+  );
+}
+
+function BasketView({ label, basket }: { label: string; basket: StoreBasket }) {
+  return (
+    <div>
+      <StaleBanner label={label} basket={basket} />
+      <div className="divide-y divide-border">
+        {basket.rows.map((row, i) => (
+          <BasketRow key={i} row={row} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Distinktivni potez iz dizajn-direkcije: usporedba ukupne cijene po
+ * trgovini prikovana za dno ekrana (thumb zone), vidljiva dok korisnik
+ * scrolla popis. Ogromne tabular brojke, zelena "Jeftinije" oznaka na
+ * povoljnijoj trgovini - jedina stvar na ekranu dizajnirana da se pročita
+ * bez fokusiranja pogleda, dok korisnik drži košaru u dućanu.
+ *
+ * "Jeftinije" usporedba ima smisla samo kad su TOČNO dvije trgovine
+ * odabrane (današnji realan slučaj - Lidl+Kaufland) - s jednom trgovinom
+ * nema s čim usporediti, a s 3+ (buduće trgovine) parna "jeftinije" oznaka
+ * gubi značenje pa se prikazuju samo ukupni iznosi bez badgea.
+ */
+function CompareBar({ stores }: { stores: StoreEntry[] }) {
+  const withData = stores.map((s) => ({ ...s, hasData: s.basket.unpricedCount < s.basket.rows.length }));
+  const bothHaveData = withData.length === 2 && withData.every((s) => s.hasData);
+
+  let cheaperKey: string | null = null;
+  let tie = false;
+  let diff = 0;
+  if (bothHaveData) {
+    const [a, b] = withData;
+    tie = a.basket.total === b.basket.total;
+    if (!tie) cheaperKey = a.basket.total < b.basket.total ? a.key : b.key;
+    diff = Math.abs(a.basket.total - b.basket.total);
+  }
+
+  const bothEmpty = withData.length === 2 && withData.every((s) => !s.hasData);
+
+  return (
+    <div className="sticky bottom-24 z-20 mt-4 rounded-2xl border border-border bg-surface-1 p-4 shadow-[0_-2px_12px_rgba(27,36,32,0.10)] sm:bottom-4">
+      <div className={`grid gap-3 ${withData.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+        {withData.map((s) => (
+          <StoreTotalColumn key={s.key} name={s.label} basket={s.basket} isCheaper={s.key === cheaperKey} />
+        ))}
+      </div>
+      {withData.length === 2 && (
+        <p className="mt-2 text-center text-xs text-ink-muted">
+          {bothEmpty
+            ? "Nema dovoljno podataka o cijenama za usporedbu."
+            : !bothHaveData
+              ? `Nema dovoljno podataka za potpunu usporedbu - ${!withData[0].hasData ? withData[0].label : withData[1].label} nema cijenu ni za jedan artikl.`
+              : tie
+                ? "Cijene su podjednake."
+                : `Razlika: ${diff.toFixed(2)} € u korist ${withData.find((s) => s.key === cheaperKey)?.label}`}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function StoreTotalColumn({ name, basket, isCheaper }: { name: string; basket: StoreBasket; isCheaper: boolean }) {
+  return (
+    <div>
+      <div className="flex items-center gap-1.5">
+        <p className="text-sm font-semibold text-ink-muted">{name}</p>
+        {isCheaper && (
+          <span className="rounded-lg bg-accent px-2 py-0.5 text-[10px] font-semibold tracking-wide text-white uppercase">
+            Jeftinije
+          </span>
+        )}
+      </div>
+      <p className="text-3xl font-semibold tabular-nums text-ink">{basket.total.toFixed(2)} €</p>
+      {basket.unpricedCount > 0 && (
+        <p className="text-xs text-warn">
+          {basket.unpricedCount} {pluralStavki(basket.unpricedCount)} bez cijene
+        </p>
+      )}
+      {basket.isStale && <p className="text-xs text-warn">cijene nisu ažurirane danas</p>}
+    </div>
+  );
+}
+
+export function StoreTabs({ stores }: { stores: StoreEntry[] }) {
+  const [activeKey, setActiveKey] = useState<string>(stores[0]?.key ?? "");
+  const active = stores.find((s) => s.key === activeKey) ?? stores[0];
+
+  return (
+    <div className="mt-4">
+      {stores.length > 1 && (
+        <div className="inline-flex gap-1 rounded-full bg-surface-2 p-1">
+          {stores.map((s) => (
+            <button
+              key={s.key}
+              type="button"
+              onClick={() => setActiveKey(s.key)}
+              className={`min-h-12 rounded-full px-5 py-2 text-sm font-semibold transition-colors duration-200 ${
+                s.key === active.key ? "bg-accent text-white" : "text-ink-muted"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {active && (
+        <div className="mt-4">
+          <BasketView label={active.label} basket={active.basket} />
+        </div>
+      )}
+
+      <CompareBar stores={stores} />
+    </div>
+  );
+}
+===FILE_END===
+===FILE_START:src/app/kosarica/page.tsx===
+import type { Metadata } from "next";
+import Link from "next/link";
+import { generateShoppingList, type ShoppingListItem } from "../tjedni-plan/actions";
+import { getAllProducts } from "@/lib/products";
+import { buildProductIndex } from "@/lib/matching";
+import { priceShoppingItem, type BasketLineResult } from "@/lib/pricing";
+import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
+import { STORE_OPTIONS, type StoreKey } from "@/config/store-options";
+import { StoreTabs, type StoreBasket, type StoreEntry } from "./StoreTabs";
+
+export const metadata: Metadata = { title: "Košarica" };
+
+// Ovisi o podacima koji se mijenjaju izvan ove stranice (cron dnevno puni
+// products, recepti/tjedni plan se mijenjaju na drugim stranicama) - statički
+// snapshot s builda bi ostao zauvijek zastario bez ovoga.
+export const dynamic = "force-dynamic";
+
+// Cjenik se dohvaća jednom dnevno (cron u 9:00). Stariji od 24h znači da je
+// dnevni dohvat propao - dodatni bug iz audita: Lidlov dohvat je bio mrtav 7
+// dana, a UI je stare cijene prikazivao kao svježe, bez ikakve naznake.
+const STALE_AFTER_MS = 24 * 60 * 60 * 1000;
+
+// Danas jedine trgovine s live cijenama - kad Tommy/Studenac/Konzum dobiju
+// price-fetch, dodaju se ovdje bez promjene filtriranja/prikaza ispod.
+const LIVE_STORES: Array<"lidl" | "kaufland"> = ["lidl", "kaufland"];
+
+function isStale(lastSuccess: string | null): boolean {
+  if (!lastSuccess) return true;
+  return Date.now() - new Date(lastSuccess).getTime() > STALE_AFTER_MS;
+}
+
+async function buildBasket(store: "lidl" | "kaufland", items: ShoppingListItem[]): Promise<Omit<StoreBasket, "lastUpdated" | "isStale">> {
+  const products = await getAllProducts(store);
+  const index = buildProductIndex(products);
+
+  const rows: BasketLineResult[] = items.map((item) => priceShoppingItem(index, item));
+
+  const pricedRows = rows.filter((r) => r.totalPrice !== null);
+  const total = round2(pricedRows.reduce((sum, r) => sum + (r.totalPrice ?? 0), 0));
+
+  return { rows, total, unpricedCount: rows.length - pricedRows.length };
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+function ErrorState({ message }: { message: string }) {
+  return (
+    <div>
+      <h1 className="text-2xl font-semibold text-ink">Košarica</h1>
+      <p className="mt-2 text-accent-red-ink">Greška kod dohvata košarice: {message}</p>
+    </div>
+  );
+}
+
+export default async function KosaricaPage() {
+  const authClient = await createClient();
+  const {
+    data: { user },
+  } = await authClient.auth.getUser();
+
+  let enabledStoreKeys: Array<"lidl" | "kaufland"> = LIVE_STORES;
+  if (user) {
+    const { data: userStores } = await authClient
+      .from("user_stores")
+      .select("store_key")
+      .eq("user_id", user.id)
+      .eq("enabled", true);
+
+    const selected = (userStores ?? []).map((r) => r.store_key as StoreKey);
+    enabledStoreKeys = LIVE_STORES.filter((key) => selected.includes(key));
+
+    // TODO(premium-gate): kad postoji billing, ovdje provjeriti
+    // profiles.is_premium prije prikaza cijena u Košarici (free korisnici
+    // bi vidjeli samo popis bez usporedbe cijena) - stupac već postoji,
+    // logika još nije uključena.
+  }
+
+  if (enabledStoreKeys.length === 0) {
+    return (
+      <div>
+        <h1 className="text-2xl font-semibold text-ink">Košarica</h1>
+        <p className="mt-2 text-ink-muted">
+          Nemaš odabranu nijednu trgovinu s live cijenama.{" "}
+          <Link href="/onboarding" className="font-semibold text-accent underline underline-offset-2">
+            Uredi odabir trgovina
+          </Link>
+          .
+        </p>
+      </div>
+    );
+  }
+
+  let items: ShoppingListItem[];
+  try {
+    items = await generateShoppingList();
+  } catch (e) {
+    return <ErrorState message={e instanceof Error ? e.message : "Nepoznata greška"} />;
+  }
+
+  if (items.length === 0) {
+    return (
+      <div>
+        <h1 className="text-2xl font-semibold text-ink">Košarica</h1>
+        <p className="mt-2 text-ink-muted">
+          Nema sastojaka - odaberi recepte za tjedan na tabu &quot;Tjedni plan&quot;.
+        </p>
+      </div>
+    );
+  }
+
+  let logs: { store: string; fetched_at: string }[] | null;
+  const basketsByKey = new Map<StoreKey, Omit<StoreBasket, "lastUpdated" | "isStale">>();
+  try {
+    const [basketResults, logResult] = await Promise.all([
+      Promise.all(enabledStoreKeys.map((key) => buildBasket(key, items))),
+      supabase
+        .from("price_fetch_log")
+        .select("store, fetched_at")
+        .eq("status", "success")
+        .order("fetched_at", { ascending: false }),
+    ]);
+    logs = logResult.data;
+    enabledStoreKeys.forEach((key, i) => {
+      basketsByKey.set(key, basketResults[i]);
+    });
+  } catch (e) {
+    return <ErrorState message={e instanceof Error ? e.message : "Nepoznata greška"} />;
+  }
+
+  const lastSuccess = (store: string) => logs?.find((l) => l.store === store)?.fetched_at ?? null;
+
+  const STORE_LABELS: Record<StoreKey, string> = Object.fromEntries(
+    STORE_OPTIONS.map((s) => [s.key, s.label])
+  ) as Record<StoreKey, string>;
+
+  const stores: StoreEntry[] = enabledStoreKeys.map((key) => {
+    const partial = basketsByKey.get(key)!;
+    const lastUpdated = lastSuccess(key);
+    return {
+      key,
+      label: STORE_LABELS[key],
+      basket: { ...partial, lastUpdated, isStale: isStale(lastUpdated) },
+    };
+  });
+
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold text-ink">Košarica</h1>
+        <Link href="/onboarding" className="text-xs font-semibold text-ink-muted underline underline-offset-2">
+          Uredi odabir trgovina
+        </Link>
+      </div>
+      <StoreTabs stores={stores} />
+    </div>
+  );
+}
+===FILE_END===
+===FILE_START:src/app/login/LoginButton.tsx===
+"use client";
+
+import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+
+function GoogleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47a5.53 5.53 0 0 1-2.4 3.63v3.02h3.88c2.27-2.09 3.57-5.17 3.57-8.84Z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.95-1.07 7.94-2.9l-3.88-3.02c-1.08.72-2.46 1.15-4.06 1.15-3.12 0-5.77-2.11-6.71-4.94H1.28v3.11A12 12 0 0 0 12 24Z"
+      />
+      <path fill="#FBBC05" d="M5.29 14.29a7.2 7.2 0 0 1 0-4.58V6.6H1.28a12 12 0 0 0 0 10.8l4.01-3.11Z" />
+      <path
+        fill="#EA4335"
+        d="M12 4.75c1.76 0 3.34.61 4.59 1.8l3.44-3.44C17.94 1.19 15.24 0 12 0A12 12 0 0 0 1.28 6.6l4.01 3.11C6.23 6.87 8.88 4.75 12 4.75Z"
+      />
+    </svg>
+  );
+}
+
+export function LoginButton({ next }: { next?: string }) {
+  const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleClick() {
+    setError(null);
+    setIsPending(true);
+    const supabase = createClient();
+    const callbackUrl = new URL("/auth/callback", window.location.origin);
+    if (next) callbackUrl.searchParams.set("next", next);
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: callbackUrl.toString() },
+    });
+
+    if (error) {
+      setError("Prijava nije uspjela. Pokušaj ponovno.");
+      setIsPending(false);
+    }
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={isPending}
+        className="flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-accent px-6 py-3 text-base font-semibold text-white transition-colors duration-200 hover:bg-accent-hover disabled:opacity-60"
+      >
+        <GoogleIcon />
+        {isPending ? "Otvaram Google…" : "Nastavi s Google"}
+      </button>
+      {error && <p className="mt-3 text-sm text-warn">{error}</p>}
+    </div>
+  );
+}
+===FILE_END===
+===FILE_START:src/app/login/page.tsx===
+import type { Metadata } from "next";
+import { LoginButton } from "./LoginButton";
+
+export const metadata: Metadata = { title: "Prijava" };
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string; error?: string }>;
+}) {
+  const { next, error } = await searchParams;
+
+  return (
+    <div className="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center px-4 text-center sm:min-h-[70vh]">
+      <div className="w-full max-w-sm">
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">Tjedni planer</h1>
+        <p className="mt-2 text-base leading-relaxed text-ink-muted">
+          Prijavi se da spremiš svoje trgovine i popise za kupovinu.
+        </p>
+
+        {error && (
+          <p className="mt-4 text-sm text-warn">Prijava nije uspjela. Pokušaj ponovno.</p>
+        )}
+
+        <div className="mt-8">
+          <LoginButton next={next} />
+        </div>
+      </div>
+    </div>
+  );
+}
+===FILE_END===
+===FILE_START:src/app/onboarding/LogoutButton.tsx===
+"use client";
+
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+
+export function LogoutButton() {
+  const router = useRouter();
+
+  async function handleClick() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
+
+  return (
+    <button type="button" onClick={handleClick} className="text-sm font-semibold text-ink-muted underline underline-offset-2">
+      Odjava
+    </button>
+  );
+}
+===FILE_END===
+===FILE_START:src/app/onboarding/StoreOnboardingForm.tsx===
+"use client";
+
+import { useState } from "react";
+import type { StoreOption } from "@/config/store-options";
+
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4" aria-hidden="true">
+      <path d="M3.5 8.5 6.5 11.5 12.5 4.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/**
+ * Onboarding checkbox stilski prati istu vizualnu logiku kao
+ * ShoppingListRow (kvačica se puni accent-zelenom) - jedini razlog za
+ * Client Component ovdje je live preview stanja prije submita; sam upis se
+ * i dalje radi kroz Server Action (saveStoreSelection).
+ */
+export function StoreOnboardingForm({
+  options,
+  initialSelected,
+  action,
+}: {
+  options: StoreOption[];
+  initialSelected: string[];
+  action: (formData: FormData) => void;
+}) {
+  const [selected, setSelected] = useState<Set<string>>(new Set(initialSelected));
+
+  function toggle(key: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  return (
+    <form action={action} className="mt-6 space-y-2">
+      {options.map((store) => {
+        const isChecked = selected.has(store.key);
+        return (
+          <label
+            key={store.key}
+            className={`flex min-h-12 items-center gap-3 rounded-xl border border-border bg-surface-1 px-4 py-3.5 transition-colors duration-200 ${
+              store.available ? "cursor-pointer" : "cursor-not-allowed opacity-50"
+            }`}
+          >
+            <input
+              type="checkbox"
+              name={store.key}
+              checked={isChecked}
+              disabled={!store.available}
+              onChange={() => toggle(store.key)}
+              className="sr-only"
+            />
+            <span
+              aria-hidden="true"
+              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition-colors duration-200 ${
+                isChecked ? "border-accent bg-accent" : "border-border bg-surface-1"
+              }`}
+            >
+              {isChecked && <CheckIcon />}
+            </span>
+            <span className="text-lg font-semibold text-ink">{store.label}</span>
+            {!store.available && (
+              <span className="ml-auto text-xs font-medium text-ink-muted">uskoro</span>
+            )}
+          </label>
+        );
+      })}
+
+      <button
+        type="submit"
+        className="mt-4 flex min-h-12 w-full items-center justify-center rounded-xl bg-accent px-6 py-3 text-base font-semibold text-white transition-colors duration-200 hover:bg-accent-hover"
+      >
+        Spremi i nastavi
+      </button>
+    </form>
+  );
+}
+===FILE_END===
+===FILE_START:src/app/onboarding/actions.ts===
+"use server";
+
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { STORE_OPTIONS, type StoreKey } from "@/config/store-options";
+
+export async function saveStoreSelection(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const selected = STORE_OPTIONS.filter(
+    (s) => s.available && formData.get(s.key) === "on"
+  ).map((s) => s.key as StoreKey);
+
+  if (selected.length === 0) {
+    redirect("/onboarding?error=empty");
+  }
+
+  const { error: deleteError } = await supabase.from("user_stores").delete().eq("user_id", user.id);
+  if (deleteError) {
+    redirect("/onboarding?error=save");
+  }
+
+  const { error: insertError } = await supabase
+    .from("user_stores")
+    .insert(selected.map((store_key) => ({ user_id: user.id, store_key, enabled: true })));
+
+  if (insertError) {
+    redirect("/onboarding?error=save");
+  }
+
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .update({ onboarding_completed: true })
+    .eq("id", user.id);
+
+  if (profileError) {
+    redirect("/onboarding?error=save");
+  }
+
+  redirect("/recepti");
+}
+===FILE_END===
+===FILE_START:src/app/onboarding/page.tsx===
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { STORE_OPTIONS } from "@/config/store-options";
+import { StoreOnboardingForm } from "./StoreOnboardingForm";
+import { LogoutButton } from "./LogoutButton";
+import { saveStoreSelection } from "./actions";
+
+export const metadata: Metadata = { title: "Odaberi trgovine" };
+
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: existing } = await supabase
+    .from("user_stores")
+    .select("store_key")
+    .eq("user_id", user.id)
+    .eq("enabled", true);
+
+  const selectedKeys = (existing ?? []).map((r) => r.store_key);
+
+  return (
+    <div className="mx-auto max-w-md">
+      <h1 className="text-2xl font-semibold tracking-tight text-ink">U kojim trgovinama kupuješ?</h1>
+      <p className="mt-2 text-base leading-relaxed text-ink-muted">
+        Košarica će uspoređivati cijene samo za trgovine koje ovdje odabereš. Odabir kasnije možeš
+        promijeniti na ovoj istoj stranici.
+      </p>
+
+      {error && (
+        <p className="mt-4 text-sm text-warn">
+          {error === "empty" ? "Odaberi barem jednu trgovinu." : "Nešto je pošlo po zlu, pokušaj ponovno."}
+        </p>
+      )}
+
+      <StoreOnboardingForm options={STORE_OPTIONS} initialSelected={selectedKeys} action={saveStoreSelection} />
+
+      <div className="mt-6 text-center">
+        <LogoutButton />
+      </div>
+    </div>
+  );
+}
+===FILE_END===

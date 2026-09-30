@@ -16,6 +16,48 @@ istraživanje formata cjenika) su gotove, plus dodatni polish krug (vizualni
 redizajn, performance fix, bugfixevi iz korisnikovog testiranja na
 mobitelu).
 
+**30.9.2026 - dodan login + odabir trgovina + trajni popisi (lokalno
+komitano, NIJE pushano, Google OAuth NIJE još konfiguriran u Supabase
+dashboardu):**
+
+- Supabase Auth (Google provider) - `src/app/login`, `src/app/auth/callback`,
+  `src/proxy.ts` (Next 16 preimenovao `middleware.ts` u `proxy.ts` - ne
+  brkati sa starim konceptom). `NEXT_PUBLIC_AUTH_DISABLED=true` zaobilazi
+  login lokalno dok Google provider nije spojen - vidi README "Prijava
+  (Google login)" za točne korake koje treba napraviti u Google Cloud
+  Console + Supabase dashboardu (nešto što JA ne mogu napraviti, treba
+  korisnik).
+- Onboarding (`src/app/onboarding`) - prvi odabir trgovina, upisuje u novu
+  `user_stores` tablicu. Generički (`src/config/store-options.ts`) - Tommy/
+  Studenac/Konzum su već u pickeru kao "uskoro" (disabled), postaju
+  birljivi kad dobiju live cjenik, bez promjene sheme/logike.
+- Košarica (`src/app/kosarica/page.tsx`, `StoreTabs.tsx`) sad filtrira
+  prikaz/izračun na trgovine koje je korisnik odabrao (`enabledStoreKeys`) -
+  ako je odabrana samo jedna, "Jeftinije" usporedba se ne prikazuje (nema s
+  čim usporediti).
+- `profiles.is_premium` stupac postoji (default false), BEZ ikakve billing
+  logike - stub komentar `TODO(premium-gate)` u `kosarica/page.tsx` označava
+  gdje će ta provjera ući kad postoji pretplata.
+- Popis za kupovinu (Tjedni plan) preseljen iz localStorage u Supabase
+  (`shopping_lists` + `shopping_list_items`, `src/app/tjedni-plan/
+  list-actions.ts`) - preživljava zatvaranje app-a i promjenu uređaja.
+  NOVO ponašanje: cijeli popis nestaje iz aktivnog prikaza tek kad su SVE
+  stavke označene, tad pada u "Prijašnje liste" (kolaps kartica ispod).
+  Max 10 arhiviranih po korisniku - 11. arhiviranje tiho briše najstariji +
+  toast "Stara lista je automatski uklonjena.".
+- Nove tablice (`profiles`, `user_stores`, `shopping_lists`,
+  `shopping_list_items`) IMAJU RLS uključen (za razliku od starih 4 tablice
+  koje ostaju namjerno otvorene - vidi "Poznata ograničenja" ispod, ta
+  napomena se odnosi SAMO na stare tablice sad).
+- Migracija `0003_auth_and_persistent_lists.sql` NIJE još pokrenuta na
+  živoj Supabase bazi (`oqwzeggdfbdlsexbaljw`) - treba je pustiti u SQL
+  Editoru prije nego login/onboarding/popisi rade na produkciji.
+- localStorage → Supabase napomena: korisnici s postojećim neoznačenim
+  stavkama u `tjedni-planer:popis-checked` u browseru GUBE to stanje (nema
+  migracijskog koraka koji čita localStorage i upisuje ga u Supabase) - ako
+  netko trenutno ima aktivan popis na mobitelu, treba ga ili dovršiti prije
+  ovog deploya ili prihvatiti da kreće ispočetka.
+
 ## Live / pristup
 
 - App: https://tjedni-planer.vercel.app
@@ -111,8 +153,11 @@ mobitelu).
 - Brend "Obrok" i logo prompt predloženi korisniku (vidi git povijest
   razgovora ako zatreba doslovni tekst prompta) - korisnik treba
   generirati logo pa ga ubaciti u navigaciju/header.
-- RLS isključen na svim tablicama - SQL za uključivanje postoji u
-  razgovoru ali NIJE primijenjen, ne primjenjivati bez izričitog traženja.
+- RLS isključen na starim, dijeljenim tablicama (`recipes`,
+  `recipe_ingredients`, `weekly_plan_days`, `products`, `price_fetch_log`) -
+  namjerno, nisu vezane uz korisnika. Nove korisničke tablice (`profiles`,
+  `user_stores`, `shopping_lists`, `shopping_list_items`) OD 30.9.2026 IMAJU
+  RLS uključen (migracija `0003_auth_and_persistent_lists.sql`).
 
 ## Testni podaci trenutno u bazi
 

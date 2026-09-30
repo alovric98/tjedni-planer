@@ -43,9 +43,35 @@ Otvori [http://localhost:3000](http://localhost:3000).
    `0002_drop_products_unique.sql`) u Supabase dashboardu (**SQL Editor** →
    zalijepi sadržaj fajla → Run), ili preko Supabase CLI-ja (`supabase db
    push`) ako imaš povezan projekt.
-5. RLS je namjerno isključen (aplikacija nema login) - `anon` ključ ima pun
-   pristup bazi, uključujući i cron rute, pa `service_role` ključ nije
-   potreban.
+5. RLS je i dalje isključen na dijeljenim tablicama (recepti, tjedni plan,
+   cjenik, cron) - `anon` ključ ima pun pristup njima, `service_role` ključ
+   nije potreban. Korisničke tablice uvedene uz login (`profiles`,
+   `user_stores`, `shopping_lists`, `shopping_list_items`) IMAJU RLS
+   uključen (vidi `0003_auth_and_persistent_lists.sql`) - svaki korisnik
+   vidi samo svoje retke.
+
+## Prijava (Google login)
+
+Auth ide preko Supabase Auth + Google OAuth provider. Da prijava stvarno
+proradi na produkciji, treba (jednokratno, u Supabase i Google dashboardu -
+kod ne treba dirati):
+
+1. **Google Cloud Console** → OAuth consent screen + kreiraj OAuth 2.0 Client
+   ID (tip "Web application"). Authorized redirect URI mora biti Supabaseov
+   callback URL, format `https://<project-ref>.supabase.co/auth/v1/callback`
+   (točan URL piše u Supabase dashboardu na koraku 2 ispod).
+2. **Supabase dashboard → Authentication → Providers → Google** - upali
+   provider, zalijepi Google Client ID i Client Secret iz koraka 1.
+3. **Supabase dashboard → Authentication → URL Configuration** - dodaj
+   produkcijski URL (`https://tjedni-planer.vercel.app`) i
+   `http://localhost:3000` u "Redirect URLs" (inače `signInWithOAuth`
+   preusmjerava na grešku nakon Google logina).
+4. Env varijable za kod ostaju iste kao za bazu
+   (`NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY`) - Google
+   client ID/secret žive isključivo u Supabase dashboardu, ne u ovom repou.
+5. `NEXT_PUBLIC_AUTH_DISABLED=true` u `.env.local` zaobilazi login/onboarding
+   redirect za lokalni dev dok gornji koraci nisu gotovi. NIKAD postaviti u
+   Vercel Production varijablama.
 
 Napomena o besplatnom planu: Supabase projekt na besplatnom planu se pauzira
 nakon dužeg perioda potpune neaktivnosti. Dnevni cron bi to trebao
@@ -87,14 +113,26 @@ MVP koristi **Slavonski Brod** za oba lanca (konfigurirano u
 ## Struktura projekta
 
 - `src/app/recepti` - tab 1: CRUD recepata
-- `src/app/tjedni-plan` - tab 2: odabir recepata po danu + generiranje popisa
-- `src/app/kosarica` - tab 3: usporedba cijena Lidl vs Kaufland
+- `src/app/tjedni-plan` - tab 2: odabir recepata po danu + trajan popis za
+  kupovinu (Supabase, arhivira se u "Prijašnje liste" kad je sve označeno)
+- `src/app/kosarica` - tab 3: usporedba cijena, filtrirano na trgovine koje
+  je korisnik odabrao
+- `src/app/login`, `src/app/onboarding`, `src/app/auth/callback` - prijava
+  (Google OAuth) i prvi odabir trgovina
+- `src/proxy.ts` - štiti rute iza logina, redirecta na `/onboarding` dok
+  odabir trgovina nije spremljen (Next.js 16 "proxy" konvencija, bivši
+  `middleware.ts`)
 - `src/app/api/cron/{lidl,kaufland}` - dnevni dohvat i parsiranje cjenika
-- `src/lib/price-fetch/` - parseri (Lidl ZIP+CSV, Kaufland CSV) i upis u bazu
-- `src/lib/matching.ts` - fuzzy matching sastojak → proizvod + izračun cijene
-- `src/lib/supabase.ts` - Supabase klijent (anon ključ, koristi se svugdje
-  jer je RLS isključen)
-- `src/config/stores.ts` - konfiguracija poslovnice
+- `src/lib/price-fetch/` - parseri (Lidl CSV, Kaufland CSV) i upis u bazu
+- `src/lib/matching.ts` - word-overlap matching sastojak → proizvod (+ "bez X"
+  negacijski filtar) i izračun cijene
+- `src/lib/supabase.ts` - dijeljeni Supabase klijent (anon ključ, bez
+  sesije) za javne podatke (recepti, tjedni plan, cjenik)
+- `src/lib/supabase/{server,client,middleware}.ts` - Supabase klijenti svjesni
+  korisničke sesije (kolačići), za sve što je vezano uz prijavljenog
+  korisnika
+- `src/config/stores.ts` - konfiguracija poslovnice (Lidl/Kaufland scraping)
+- `src/config/store-options.ts` - generički popis trgovina za onboarding
 - `supabase/migrations/` - SQL migracije
 
 ## Van dosega za MVP (moguće buduće nadogradnje)

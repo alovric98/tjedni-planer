@@ -56,7 +56,9 @@ export function LoginButton({ next }: { next?: string }) {
         <GoogleIcon />
         {isPending ? "Otvaram Google…" : "Nastavi s Google"}
       </button>
-      {error && <p className="mt-3 text-sm text-warn">{error}</p>}
+      {error && (
+        <p className="mt-3 rounded-lg bg-warn-bg px-3 py-2 text-sm text-warn">{error}</p>
+      )}
     </div>
   );
 }

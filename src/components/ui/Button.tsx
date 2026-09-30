@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes } from "react";
 
-type Variant = "primary" | "secondary" | "ghost";
+type Variant = "primary" | "secondary" | "ghost" | "danger";
 type Size = "md" | "lg";
 
 const BASE =
@@ -14,6 +14,7 @@ const VARIANTS: Record<Variant, string> = {
   secondary:
     "border border-border-strong bg-surface-1 text-ink shadow-raised hover:bg-surface-2",
   ghost: "text-ink-muted hover:bg-surface-2 hover:text-ink",
+  danger: "border border-warn/30 bg-warn-bg text-warn shadow-raised hover:border-warn/60",
 };
 
 const SIZES: Record<Size, string> = {
@@ -28,6 +29,11 @@ export function buttonClasses({
   fullWidth = false,
 }: { variant?: Variant; size?: Size; fullWidth?: boolean } = {}) {
   return `${BASE} ${VARIANTS[variant]} ${SIZES[size]} ${fullWidth ? "w-full" : ""}`;
+}
+
+/** Klase ikona-gumba (touch target 44px), za <button> i <Link> s ikonom i aria-label. */
+export function iconButtonClasses() {
+  return "flex h-11 w-11 items-center justify-center rounded-control text-ink-muted transition-colors duration-150 hover:bg-surface-2 hover:text-ink active:scale-[0.96] disabled:opacity-50";
 }
 
 export function Spinner({ className = "" }: { className?: string }) {

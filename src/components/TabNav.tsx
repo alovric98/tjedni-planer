@@ -2,35 +2,75 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { ComponentType } from "react";
+import { BasketIcon, BookIcon, CalendarIcon } from "@/components/ui/icons";
 
-const TABS = [
-  { href: "/recepti", label: "Recepti" },
-  { href: "/tjedni-plan", label: "Tjedni plan" },
-  { href: "/kosarica", label: "Košarica" },
-] as const;
+const TABS: { href: string; label: string; Icon: ComponentType<{ className?: string }> }[] = [
+  { href: "/recepti", label: "Recepti", Icon: BookIcon },
+  { href: "/tjedni-plan", label: "Tjedni plan", Icon: CalendarIcon },
+  { href: "/kosarica", label: "Košarica", Icon: BasketIcon },
+];
 
-export function TabNav() {
+function isActiveTab(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+/**
+ * Desktop (od `sm`): tabovi žive u headeru. Na mobitelu je `hidden`
+ * (display:none), pa je u pristupačnom stablu samo jedan "Glavna navigacija"
+ * landmark odjednom - drugi je MobileTabBar.
+ */
+export function DesktopTabs() {
   const pathname = usePathname();
 
   return (
-    <nav
-      className="fixed inset-x-3 bottom-3 z-30 flex gap-1 rounded-full border border-border bg-surface-1 p-1.5
-        sm:static sm:inset-auto sm:mb-6 sm:gap-2 sm:rounded-none sm:border-x-0 sm:border-t-0 sm:border-b sm:border-border sm:bg-transparent sm:p-0"
-    >
-      {TABS.map((tab) => {
-        const isActive = pathname.startsWith(tab.href);
+    <nav aria-label="Glavna navigacija" className="ml-4 hidden items-center gap-1 sm:flex">
+      {TABS.map(({ href, label }) => {
+        const active = isActiveTab(pathname, href);
         return (
           <Link
-            key={tab.href}
-            href={tab.href}
-            className={`flex min-h-12 flex-1 items-center justify-center rounded-full py-2.5 text-center text-sm font-semibold transition-colors duration-200
-              sm:min-h-0 sm:flex-none sm:rounded-none sm:border-b-2 sm:border-transparent sm:px-3 sm:py-3 ${
-                isActive
-                  ? "bg-accent text-white sm:bg-transparent sm:border-accent-fg sm:text-accent-fg"
-                  : "text-ink-muted"
-              }`}
+            key={href}
+            href={href}
+            aria-current={active ? "page" : undefined}
+            className={`flex min-h-10 items-center rounded-control px-3.5 text-label font-semibold transition-colors duration-150 ${
+              active ? "bg-accent-soft text-accent-fg" : "text-ink-muted hover:bg-surface-2 hover:text-ink"
+            }`}
           >
-            {tab.label}
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+/**
+ * Mobilni donji pill nav: fiksan, iznad safe-area, touch target 56px. Visina
+ * (+ razmak + safe-area) je u --nav-offset (globals.css) - main padding, Toast
+ * i sticky trake se oslanjaju na nju da ih nav ne prekrije.
+ */
+export function MobileTabBar() {
+  const pathname = usePathname();
+  if (pathname === "/login") return null;
+
+  return (
+    <nav
+      aria-label="Glavna navigacija"
+      className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-30 mx-auto flex max-w-md gap-1 rounded-full border border-border-strong bg-surface-1/95 p-1.5 shadow-overlay backdrop-blur-md sm:hidden"
+    >
+      {TABS.map(({ href, label, Icon }) => {
+        const active = isActiveTab(pathname, href);
+        return (
+          <Link
+            key={href}
+            href={href}
+            aria-current={active ? "page" : undefined}
+            className={`flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-full px-2 text-label font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.97] ${
+              active ? "bg-accent text-white" : "text-ink-muted hover:bg-surface-2 hover:text-ink active:bg-surface-2"
+            }`}
+          >
+            <Icon className="h-5 w-5" />
+            <span className="max-w-full truncate">{label}</span>
           </Link>
         );
       })}

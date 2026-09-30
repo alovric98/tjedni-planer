@@ -1,6 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
-import { TabNav } from "@/components/TabNav";
+import { MobileTabBar } from "@/components/TabNav";
 import { AppHeader } from "@/components/AppHeader";
 import { ToastHost } from "@/components/Toast";
 import { createClient } from "@/lib/supabase/server";
@@ -58,6 +58,10 @@ export const metadata: Metadata = {
   },
 };
 
+// viewport-fit=cover je preduvjet da env(safe-area-inset-*) (donji nav, toast,
+// header) uopće vraća vrijednosti na uređajima s notchom/home indikatorom.
+export const viewport: Viewport = { viewportFit: "cover" };
+
 // Primijeni spremljenu temu PRIJE hydrationa da izbjegnemo flash pogrešne
 // teme. Čita se izravno iz localStorage (ne iz Reacta) jer server ne zna
 // korisnikovu preferenciju ni OS postavku.
@@ -86,9 +90,11 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               : null
           }
         />
-        <TabNav />
         <ToastHost />
-        <main className="flex-1 p-4 pb-28 sm:pb-4">{children}</main>
+        <main className="flex-1 px-4 pt-6 pb-[calc(var(--nav-offset)+1.5rem)]">
+          <div className="mx-auto w-full max-w-5xl">{children}</div>
+        </main>
+        <MobileTabBar />
       </body>
     </html>
   );

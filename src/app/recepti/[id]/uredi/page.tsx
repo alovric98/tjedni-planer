@@ -25,7 +25,7 @@ export default async function UrediReceptPage({
   }
 
   return (
-    <div>
+    <div className="mx-auto w-full max-w-2xl">
       <h1 className="text-title text-ink">Uredi recept</h1>
       <div className="mt-4">
         <RecipeForm

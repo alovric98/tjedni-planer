@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState, type KeyboardEvent } from "react";
+import { Badge } from "@/components/ui/Badge";
 import { formatQuantity, formatMeasure } from "@/lib/format";
 import type { BasketLineResult, PartPriceResult } from "@/lib/pricing";
 import type { StoreKey } from "@/config/store-options";
@@ -50,12 +51,12 @@ function InfoIcon() {
 /** "Kupuješ" (cijela pakiranja ili na vagu) + oznake prosjeka/procjene. */
 function PartPurchaseLine({ part }: { part: PartPriceResult }) {
   if (part.itemPrice === null || !part.purchase) {
-    return <p className="text-xs text-warn">cijena nedostupna</p>;
+    return <p className="mt-0.5 text-label text-warn">cijena nedostupna</p>;
   }
   const { purchase } = part;
 
   return (
-    <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-muted">
+    <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-label text-ink-muted">
       {purchase.soldByWeight ? (
         <span>
           Na vagu: {formatMeasure(purchase.purchaseQuantity, purchase.basis)} × {purchase.pricePerKg?.toFixed(2)} €/kg
@@ -101,67 +102,74 @@ function PartPurchaseLine({ part }: { part: PartPriceResult }) {
  * Jedan redak popisa - Košarica je isključivo za usporedbu cijena
  * (read-only), tap-to-strike checklist interakcija živi na "Tjedni plan"
  * ekranu (ShoppingListGenerator.tsx), gdje se koristi u dućanu.
+ *
+ * Hijerarhija: naziv sastojka + cijena su primarni (cijena desno, veća,
+ * tabular), "Treba" i detalji pakiranja sekundarni.
  */
 function BasketRow({ row }: { row: BasketLineResult }) {
   const chosenPart = row.chosenPartIndex !== null ? row.parts[row.chosenPartIndex] : null;
 
   return (
-    <div className="flex min-h-12 items-start gap-3 py-4">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="font-semibold text-ink">{row.ingredient}</p>
-            {row.mode === "single" && chosenPart?.matchedName && (
-              <p className="mt-0.5 truncate text-sm text-ink-muted">{chosenPart.matchedName}</p>
-            )}
-            {row.mode === "or" && chosenPart && (
-              <p className="mt-0.5 truncate text-sm text-ink-muted">
-                {chosenPart.matchedName ?? chosenPart.name}{" "}
-                <span className="text-xs">(odabrano - jeftinija alternativa)</span>
-              </p>
-            )}
-          </div>
-          <div className="shrink-0 text-right">
-            <p className="text-xs text-ink-muted">
-              Treba: {formatQuantity(row.quantity)} {row.unit}
+    <li className="px-4 py-3.5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="font-semibold text-ink [overflow-wrap:anywhere]">{row.ingredient}</p>
+          {row.mode === "single" && chosenPart?.matchedName && (
+            <p className="mt-0.5 truncate text-label text-ink-muted">{chosenPart.matchedName}</p>
+          )}
+          {row.mode === "or" && chosenPart && (
+            <p className="mt-0.5 text-label text-ink-muted">
+              <span className="truncate">{chosenPart.matchedName ?? chosenPart.name}</span>{" "}
+              <span>(odabrano - jeftinija alternativa)</span>
             </p>
-            <p className="font-semibold tabular-nums text-ink">
-              {row.totalPrice !== null ? `${row.totalPrice.toFixed(2)} €` : <span className="text-warn">cijena nedostupna</span>}
-            </p>
-          </div>
+          )}
         </div>
-
-        {row.mode === "and" ? (
-          <div className="mt-2 space-y-2 border-t border-border pt-2">
-            {row.parts.map((part, i) => (
-              <div key={i}>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-ink-muted">{part.matchedName ?? part.name}</span>
-                  <span className="shrink-0 text-xs font-semibold tabular-nums text-ink">
-                    {part.itemPrice !== null ? `${part.itemPrice.toFixed(2)} €` : <span className="text-warn">nedostupno</span>}
-                  </span>
-                </div>
-                <PartPurchaseLine part={part} />
-              </div>
-            ))}
-            {row.partiallyUnavailable && (
-              <p className="text-xs text-warn">Dio ovog sastojka nema cijenu - u zbroju je samo ostatak.</p>
-            )}
-          </div>
-        ) : (
-          chosenPart && <PartPurchaseLine part={chosenPart} />
-        )}
+        <div className="shrink-0 text-right">
+          {row.totalPrice !== null ? (
+            <p className="text-heading font-semibold tabular-nums text-ink">{row.totalPrice.toFixed(2)} €</p>
+          ) : (
+            <Badge tone="warn">Cijena nedostupna</Badge>
+          )}
+          <p className="mt-0.5 text-label text-ink-muted">
+            Treba: {formatQuantity(row.quantity)} {row.unit}
+          </p>
+        </div>
       </div>
-    </div>
+
+      {row.mode === "and" ? (
+        <div className="mt-3 space-y-2.5 border-t border-border pt-3">
+          {row.parts.map((part, i) => (
+            <div key={i}>
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="min-w-0 text-label text-ink-muted">{part.matchedName ?? part.name}</span>
+                <span className="shrink-0 text-label font-semibold tabular-nums text-ink">
+                  {part.itemPrice !== null ? `${part.itemPrice.toFixed(2)} €` : <span className="text-warn">nedostupno</span>}
+                </span>
+              </div>
+              <PartPurchaseLine part={part} />
+            </div>
+          ))}
+          {row.partiallyUnavailable && (
+            <p className="text-label text-warn">Dio ovog sastojka nema cijenu - u zbroju je samo ostatak.</p>
+          )}
+        </div>
+      ) : (
+        chosenPart && (
+          <div className="mt-1">
+            <PartPurchaseLine part={chosenPart} />
+          </div>
+        )
+      )}
+    </li>
   );
 }
 
 function StaleBanner({ label, basket }: { label: string; basket: StoreBasket }) {
   if (!basket.isStale) return null;
   return (
-    <div className="mb-3 rounded-xl border border-warn/30 bg-warn-bg p-4">
-      <p className="text-sm font-semibold text-warn">Cijene za {label} nisu ažurirane danas</p>
-      <p className="mt-1 text-xs text-warn">
+    <div role="status" className="mb-3 rounded-surface border border-warn/30 bg-warn-bg px-4 py-3">
+      <p className="text-label font-semibold text-warn">Cijene za {label} nisu ažurirane danas</p>
+      <p className="mt-1 text-label text-warn">
         Zadnji uspješan dohvat: {formatDate(basket.lastUpdated)}. Prikazane cijene mogu biti stare i ne odražavati
         stanje u trgovini.
       </p>
@@ -173,11 +181,11 @@ function BasketView({ label, basket }: { label: string; basket: StoreBasket }) {
   return (
     <div>
       <StaleBanner label={label} basket={basket} />
-      <div className="divide-y divide-border">
+      <ul className="divide-y divide-border rounded-surface border border-border bg-surface-1 shadow-raised">
         {basket.rows.map((row, i) => (
           <BasketRow key={i} row={row} />
         ))}
-      </div>
+      </ul>
     </div>
   );
 }
@@ -211,14 +219,24 @@ function CompareBar({ stores }: { stores: StoreEntry[] }) {
   const bothEmpty = withData.length === 2 && withData.every((s) => !s.hasData);
 
   return (
-    <div className="sticky bottom-24 z-20 mt-4 rounded-2xl border border-border bg-surface-1 p-4 shadow-[0_-2px_12px_rgba(27,36,32,0.10)] sm:bottom-4">
-      <div className={`grid gap-3 ${withData.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+    <section
+      aria-label="Usporedba ukupnih cijena"
+      // Iznad mobilnog nav-a (--nav-offset), od `sm` nav je u headeru.
+      className="sticky bottom-[calc(var(--nav-offset)+0.75rem)] z-20 mt-4 rounded-surface border border-border-strong bg-surface-1 p-4 shadow-overlay sm:bottom-4"
+    >
+      <div className={`grid gap-4 ${withData.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
         {withData.map((s) => (
-          <StoreTotalColumn key={s.key} name={s.label} basket={s.basket} isCheaper={s.key === cheaperKey} />
+          <StoreTotalColumn
+            key={s.key}
+            name={s.label}
+            basket={s.basket}
+            hasData={s.hasData}
+            isCheaper={s.key === cheaperKey}
+          />
         ))}
       </div>
       {withData.length === 2 && (
-        <p className="mt-2 text-center text-xs text-ink-muted">
+        <p className="mt-3 border-t border-border pt-3 text-center text-label text-ink-muted">
           {bothEmpty
             ? "Nema dovoljno podataka o cijenama za usporedbu."
             : !bothHaveData
@@ -228,28 +246,37 @@ function CompareBar({ stores }: { stores: StoreEntry[] }) {
                 : `Razlika: ${diff.toFixed(2)} € u korist ${withData.find((s) => s.key === cheaperKey)?.label}`}
         </p>
       )}
-    </div>
+    </section>
   );
 }
 
-function StoreTotalColumn({ name, basket, isCheaper }: { name: string; basket: StoreBasket; isCheaper: boolean }) {
+function StoreTotalColumn({
+  name,
+  basket,
+  hasData,
+  isCheaper,
+}: {
+  name: string;
+  basket: StoreBasket;
+  hasData: boolean;
+  isCheaper: boolean;
+}) {
   return (
-    <div>
-      <div className="flex items-center gap-1.5">
-        <p className="text-sm font-semibold text-ink-muted">{name}</p>
-        {isCheaper && (
-          <span className="rounded-lg bg-accent px-2 py-0.5 text-[10px] font-semibold tracking-wide text-white uppercase">
-            Jeftinije
-          </span>
-        )}
+    <div className="min-w-0">
+      <div className="flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1">
+        <p className="text-label font-semibold text-ink-muted">{name}</p>
+        {isCheaper && <Badge tone="solid">Jeftinije</Badge>}
       </div>
-      <p className="text-3xl font-semibold tabular-nums text-ink">{basket.total.toFixed(2)} €</p>
+      {/* Bez ijedne cijene zbroj bi bio "0.00 €" i zavaravao - prikazujemo crticu. */}
+      <p className="mt-0.5 text-title font-semibold tabular-nums text-ink">
+        {hasData ? `${basket.total.toFixed(2)} €` : <span aria-label="nema cijena">—</span>}
+      </p>
       {basket.unpricedCount > 0 && (
-        <p className="text-xs text-warn">
+        <p className="mt-0.5 text-label text-warn">
           {basket.unpricedCount} {pluralStavki(basket.unpricedCount)} bez cijene
         </p>
       )}
-      {basket.isStale && <p className="text-xs text-warn">cijene nisu ažurirane danas</p>}
+      {basket.isStale && <p className="mt-0.5 text-label text-warn">cijene nisu ažurirane danas</p>}
     </div>
   );
 }
@@ -257,28 +284,65 @@ function StoreTotalColumn({ name, basket, isCheaper }: { name: string; basket: S
 export function StoreTabs({ stores }: { stores: StoreEntry[] }) {
   const [activeKey, setActiveKey] = useState<string>(stores[0]?.key ?? "");
   const active = stores.find((s) => s.key === activeKey) ?? stores[0];
+  const baseId = useId();
+  const tabId = (key: string) => `${baseId}-tab-${key}`;
+  const panelId = `${baseId}-panel`;
+
+  // WAI-ARIA tabs: strelice/Home/End mijenjaju karticu i fokus (roving tabindex).
+  function onTabKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+    const index = stores.findIndex((s) => s.key === active?.key);
+    let next = -1;
+    if (e.key === "ArrowRight") next = (index + 1) % stores.length;
+    else if (e.key === "ArrowLeft") next = (index - 1 + stores.length) % stores.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = stores.length - 1;
+    if (next < 0) return;
+    e.preventDefault();
+    setActiveKey(stores[next].key);
+    document.getElementById(tabId(stores[next].key))?.focus();
+  }
 
   return (
     <div className="mt-4">
       {stores.length > 1 && (
-        <div className="inline-flex gap-1 rounded-full bg-surface-2 p-1">
-          {stores.map((s) => (
-            <button
-              key={s.key}
-              type="button"
-              onClick={() => setActiveKey(s.key)}
-              className={`min-h-12 rounded-full px-5 py-2 text-sm font-semibold transition-colors duration-200 ${
-                s.key === active.key ? "bg-accent text-white" : "text-ink-muted"
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
+        <div
+          role="tablist"
+          aria-label="Trgovine"
+          onKeyDown={onTabKeyDown}
+          className="inline-flex gap-0.5 rounded-control border border-border bg-surface-2 p-0.5"
+        >
+          {stores.map((s) => {
+            const selected = s.key === active.key;
+            return (
+              <button
+                key={s.key}
+                id={tabId(s.key)}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                aria-controls={panelId}
+                tabIndex={selected ? 0 : -1}
+                onClick={() => setActiveKey(s.key)}
+                className={`min-h-11 rounded-[0.5rem] px-5 text-label font-semibold transition-[background-color,color,box-shadow] duration-150 ${
+                  selected
+                    ? "bg-surface-1 text-ink shadow-raised ring-1 ring-border-strong"
+                    : "text-ink-muted hover:text-ink"
+                }`}
+              >
+                {s.label}
+              </button>
+            );
+          })}
         </div>
       )}
 
       {active && (
-        <div className="mt-4">
+        <div
+          id={panelId}
+          role={stores.length > 1 ? "tabpanel" : undefined}
+          aria-labelledby={stores.length > 1 ? tabId(active.key) : undefined}
+          className="mt-4"
+        >
           <BasketView label={active.label} basket={active.basket} />
         </div>
       )}

@@ -8,6 +8,9 @@ import { findIngredientRule } from "@/config/ingredient-rules";
 import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase/server";
 import { STORE_OPTIONS, type StoreKey } from "@/config/store-options";
+import { buttonClasses } from "@/components/ui/Button";
+import { EmptyState, ErrorNotice } from "@/components/ui/EmptyState";
+import { BasketIcon, CalendarIcon } from "@/components/ui/icons";
 import { StoreTabs, type StoreBasket, type StoreEntry } from "./StoreTabs";
 
 export const metadata: Metadata = { title: "Košarica" };
@@ -53,7 +56,9 @@ function ErrorState({ message }: { message: string }) {
   return (
     <div>
       <h1 className="text-title text-ink">Košarica</h1>
-      <p className="mt-2 text-warn">Greška kod dohvata košarice: {message}</p>
+      <div className="mt-4">
+        <ErrorNotice>Greška kod dohvata košarice: {message}</ErrorNotice>
+      </div>
     </div>
   );
 }
@@ -85,13 +90,19 @@ export default async function KosaricaPage() {
     return (
       <div>
         <h1 className="text-title text-ink">Košarica</h1>
-        <p className="mt-2 text-ink-muted">
-          Nemaš odabranu nijednu trgovinu s live cijenama.{" "}
-          <Link href="/onboarding" className="font-semibold text-accent-fg underline underline-offset-2">
-            Uredi odabir trgovina
-          </Link>
-          .
-        </p>
+        <div className="mt-6">
+          <EmptyState
+            icon={<BasketIcon className="h-6 w-6" />}
+            title="Nema odabranih trgovina"
+            action={
+              <Link href="/onboarding" className={buttonClasses({ size: "lg" })}>
+                Uredi odabir trgovina
+              </Link>
+            }
+          >
+            Nemaš odabranu nijednu trgovinu s cijenama uživo.
+          </EmptyState>
+        </div>
       </div>
     );
   }
@@ -107,9 +118,20 @@ export default async function KosaricaPage() {
     return (
       <div>
         <h1 className="text-title text-ink">Košarica</h1>
-        <p className="mt-2 text-ink-muted">
-          Nema sastojaka - odaberi recepte za tjedan na tabu &quot;Tjedni plan&quot;.
-        </p>
+        <div className="mt-6">
+          <EmptyState
+            icon={<BasketIcon className="h-6 w-6" />}
+            title="Košarica je prazna"
+            action={
+              <Link href="/tjedni-plan" className={buttonClasses({ size: "lg" })}>
+                <CalendarIcon />
+                Otvori tjedni plan
+              </Link>
+            }
+          >
+            Nema sastojaka - odaberi recepte za tjedan na tabu &quot;Tjedni plan&quot;.
+          </EmptyState>
+        </div>
       </div>
     );
   }

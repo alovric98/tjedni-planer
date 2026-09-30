@@ -5,7 +5,7 @@ import { showToast } from "@/components/Toast";
 
 export type ThemePreference = "light" | "dark" | "system";
 
-const OPTIONS: { value: ThemePreference; label: string }[] = [
+export const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
   { value: "light", label: "Svijetlo" },
   { value: "dark", label: "Tamno" },
   { value: "system", label: "Sustav" },
@@ -51,12 +51,14 @@ function setTheme(value: ThemePreference) {
   listeners.forEach((notify) => notify());
 }
 
-/** Segmentirani Light/Dark/System prekidač. Reused u AppHeader account meniju i na /settings. */
-export function ThemeSwitcher({ className = "" }: { className?: string }) {
+/**
+ * Stanje teme za sve prikaze prekidača (ThemeSwitcher, account meni). Kad je
+ * preferencija "system", prati promjenu OS teme uživo (korisnik ne mora ništa
+ * kliknuti da se stranica prilagodi).
+ */
+export function useTheme() {
   const pref = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  // Kad je preferencija "system", prati promjenu OS teme uživo (korisnik
-  // ne mora ništa kliknuti da se stranica prilagodi).
   useEffect(() => {
     const mql = window.matchMedia("(prefers-color-scheme: dark)");
     function onChange() {
@@ -66,10 +68,17 @@ export function ThemeSwitcher({ className = "" }: { className?: string }) {
     return () => mql.removeEventListener("change", onChange);
   }, []);
 
-  function handleSelect(value: ThemePreference) {
+  function select(value: ThemePreference) {
     setTheme(value);
     showToast("Izgled spremljen.");
   }
+
+  return { pref, select };
+}
+
+/** Segmentirani Light/Dark/System prekidač. Koristi se na /settings (u account meniju su isti izbori kao menuitemradio). */
+export function ThemeSwitcher({ className = "" }: { className?: string }) {
+  const { pref, select } = useTheme();
 
   return (
     <div
@@ -77,7 +86,7 @@ export function ThemeSwitcher({ className = "" }: { className?: string }) {
       aria-label="Izgled"
       className={`inline-flex gap-0.5 rounded-control border border-border bg-surface-2 p-0.5 ${className}`}
     >
-      {OPTIONS.map((opt) => {
+      {THEME_OPTIONS.map((opt) => {
         const isActive = pref === opt.value;
         return (
           <button
@@ -85,7 +94,7 @@ export function ThemeSwitcher({ className = "" }: { className?: string }) {
             type="button"
             role="radio"
             aria-checked={isActive}
-            onClick={() => handleSelect(opt.value)}
+            onClick={() => select(opt.value)}
             className={`min-h-10 flex-1 rounded-[0.5rem] px-3 text-label font-semibold transition-[background-color,color,box-shadow] duration-150 ${
               isActive
                 ? "bg-surface-1 text-ink shadow-raised ring-1 ring-border-strong"

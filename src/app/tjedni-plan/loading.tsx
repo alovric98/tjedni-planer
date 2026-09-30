@@ -1,8 +1,10 @@
+import { Spinner } from "@/components/ui/Button";
+
 export default function TjedniPlanLoading() {
   return (
-    <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
-      <div className="h-10 w-10 animate-spin rounded-full border-4 border-accent-fg/20 border-t-accent-fg" />
-      <p className="text-sm text-ink-muted">Učitavam tjedni plan…</p>
+    <div role="status" className="flex flex-col items-center justify-center gap-3 py-24 text-center">
+      <Spinner className="h-6 w-6 text-accent-fg" />
+      <p className="text-label text-ink-muted">Učitavam tjedni plan…</p>
     </div>
   );
 }
